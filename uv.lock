@@ -525,6 +525,7 @@ dependencies = [
     { name = "psycopg2-binary" },
     { name = "python-dotenv" },
     { name = "speechrecognition" },
+    { name = "sqlalchemy" },
 ]
 
 [package.metadata]
@@ -536,6 +537,7 @@ requires-dist = [
     { name = "psycopg2-binary", specifier = ">=2.9.10" },
     { name = "python-dotenv", specifier = ">=1.0.1" },
     { name = "speechrecognition", specifier = ">=3.11.0" },
+    { name = "sqlalchemy" },
 ]
 
 [[package]]

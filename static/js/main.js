@@ -59,6 +59,38 @@ function updateTimeOptions() {
     });
 }
 
+async function saveTranscript() {
+    const state = window.pitchPracticeState;
+    const transcript = document.getElementById('transcript').textContent;
+    
+    if (!transcript) {
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/save-transcript', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                stage: state.selectedStage,
+                duration: state.selectedTime * 60,
+                transcript: transcript
+            })
+        });
+
+        const data = await response.json();
+        if (data.success) {
+            console.log('Transcript saved successfully');
+        } else {
+            console.error('Failed to save transcript:', data.message);
+        }
+    } catch (error) {
+        console.error('Error saving transcript:', error);
+    }
+}
+
 // Initialize global state
 window.pitchPracticeState = {
     currentStep: 'stage',
@@ -117,69 +149,13 @@ function stopRecording() {
     state.isRecording = false;
     updateRecordingUI();
     stopTimer();
-}
-
-// Global screen management
-let welcomeHeader;
-let screens;
-
-function showScreen(screenName) {
-    window.pitchPracticeState.currentStep = screenName;
-    Object.entries(screens).forEach(([name, element]) => {
-        if (element) {
-            element.classList.toggle('hidden', name !== screenName);
-        }
-    });
-    
-    if (welcomeHeader) {
-        welcomeHeader.style.display = screenName === 'stage' ? 'block' : 'none';
-    }
-}
-
-function resetSession() {
-    // Clear existing timer if any
-    if (window.pitchPracticeState.timer) {
-        clearInterval(window.pitchPracticeState.timer);
-    }
-    
-    // Reset the state
-    window.pitchPracticeState = {
-        currentStep: 'stage',
-        selectedStage: '',
-        selectedTime: '',
-        selectedPitchType: '',
-        isRecording: false,
-        timeRemaining: 0,
-        recognition: null,
-        timer: null
-    };
-    
-    // Reset UI elements
-    stopRecording();
-    document.getElementById('transcript').textContent = '';
-    document.getElementById('feedbackContainer').classList.add('hidden');
-    document.getElementById('timeDisplay').textContent = '0:00';
-    showScreen('stage');
+    // Save transcript when recording stops
+    saveTranscript();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Feather icons
     feather.replace();
-
-    // Initialize global DOM elements
-    welcomeHeader = document.querySelector('.card-header');
-    if (!welcomeHeader) {
-        console.error('Welcome header not found');
-    }
-
-    // Initialize screens object
-    screens = {
-        stage: document.getElementById('stageSelection'),
-        time: document.getElementById('timeSelection'),
-        pitchType: document.getElementById('pitchTypeSelection'),
-        ready: document.getElementById('readyScreen'),
-        recording: document.getElementById('recordingScreen')
-    };
 
     // Theme Toggle
     const themeToggle = document.getElementById('themeToggle');
@@ -203,7 +179,6 @@ document.addEventListener('DOMContentLoaded', function() {
             button.classList.add('active');
             
             window.pitchPracticeState.selectedStage = button.dataset.value;
-            if (welcomeHeader) welcomeHeader.style.display = 'none';
             showScreen('time');
             updateTimeOptions();
         });
@@ -256,6 +231,24 @@ document.addEventListener('DOMContentLoaded', function() {
     // Feedback Button
     document.getElementById('feedbackBtn').addEventListener('click', generateFeedback);
 
+    // Screen management
+    const screens = {
+        stage: document.getElementById('stageSelection'),
+        time: document.getElementById('timeSelection'),
+        pitchType: document.getElementById('pitchTypeSelection'),
+        ready: document.getElementById('readyScreen'),
+        recording: document.getElementById('recordingScreen')
+    };
+
+    window.showScreen = function(screenName) {
+        window.pitchPracticeState.currentStep = screenName;
+        Object.entries(screens).forEach(([name, element]) => {
+            if (element) {
+                element.classList.toggle('hidden', name !== screenName);
+            }
+        });
+    };
+
     function handleBack() {
         document.querySelectorAll('.stage-btn, .time-btn, .pitch-type-btn').forEach(btn => {
             btn.classList.remove('active');
@@ -263,7 +256,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         switch (window.pitchPracticeState.currentStep) {
             case 'time':
-                if (welcomeHeader) welcomeHeader.style.display = 'block';
                 showScreen('stage');
                 break;
             case 'pitchType':
