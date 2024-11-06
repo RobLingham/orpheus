@@ -26,7 +26,7 @@
 
         <main class="main-card">
             <div class="card-header">
-                <h2>Pitch Practice</h2>
+                <h2>Master Your Pitch, Enchant Every Audience.</h2>
                 <p class="subtitle">Practice your pitch, tackle tough objections, answer commonly asked questions, analyze your performance, and level up your pitch deck - all in a one place.</p>
             </div>
 
@@ -99,20 +99,18 @@
                     </div>
                     <div id="qaContainer" class="qa-container qa-mode-only hidden">
                         <div id="questionsList" class="questions-list"></div>
-                        <button id="continuePitchBtn" class="btn primary-btn" style="display: none;">
-                            Continue Pitch
-                        </button>
+                        <button class="btn primary-btn" id="continuePitchBtn">Continue Pitch</button>
                     </div>
                     <button class="btn primary-btn" id="feedbackBtn">Generate Feedback</button>
                     <div id="feedbackContainer" class="feedback-container hidden">
                         <h3>Feedback:</h3>
-                        <div id="feedbackList"></div>
+                        <ul id="feedbackList"></ul>
                     </div>
                     <div class="button-group">
                         <button class="btn" id="resetSessionBtn">
                             <i data-feather="refresh-cw"></i> Reset Session
                         </button>
-                        <button class="btn primary-btn" id="endSessionBtn">
+                        <button class="btn" id="endSessionBtn">
                             <i data-feather="check-circle"></i> End Session
                         </button>
                     </div>
@@ -123,8 +121,5 @@
 
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script>
-        feather.replace();
-    </script>
 </body>
 </html>

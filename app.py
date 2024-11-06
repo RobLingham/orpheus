@@ -3,7 +3,6 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
 from openai import OpenAI
-import json
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pitches.db'
@@ -38,7 +37,7 @@ def generate_ai_feedback(transcript: str, stage: str) -> list:
 
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4",
             messages=[{"role": "user", "content": prompt}]
         )
         feedback = response.choices[0].message.content
@@ -58,25 +57,16 @@ def generate_question_or_objection(transcript: str, stage: str) -> dict:
 
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}]
         )
-        
-        try:
-            parsed = json.loads(response.choices[0].message.content)
-            if not isinstance(parsed, dict) or 'type' not in parsed or 'content' not in parsed:
-                raise ValueError("Invalid response format")
-            return parsed
-        except json.JSONDecodeError:
-            raise ValueError("Invalid JSON response from OpenAI")
-            
+        response_text = response.choices[0].message.content
+        # Parse the response text as JSON
+        import json
+        return json.loads(response_text)
     except Exception as e:
-        print(f"Error generating question:", e)
-        return {
-            "type": "question",
-            "content": "Could you elaborate more on your business model?"
-        }
+        print(f"Error generating question: {str(e)}")
+        return {"type": "question", "content": "Could you elaborate more on your business model?"}
 
 @app.route('/')
 def index():
@@ -124,42 +114,6 @@ def generate_question():
         
         question = generate_question_or_objection(transcript, stage)
         return jsonify({'success': True, 'response': question})
-    except Exception as e:
-        return jsonify({'success': False, 'message': str(e)}), 500
-
-@app.route('/api/analyze-responses', methods=['POST'])
-def analyze_responses():
-    try:
-        data = request.json
-        responses = data.get('responses', [])
-        stage = data.get('stage')
-        
-        if not responses or not stage:
-            return jsonify({'success': False, 'message': 'Missing responses or stage'}), 400
-        
-        qa_text = "\n".join([
-            f"Q: {r['question']}\nA: {r['response']}"
-            for r in responses
-        ])
-        
-        prompt = f'''Analyze this {stage} pitch Q&A session:
-        {qa_text}
-        
-        Provide feedback on:
-        1. Answer Quality & Completeness
-        2. Handling of Objections
-        3. Consistency Across Answers
-        4. Technical Accuracy
-        5. Overall Communication Style
-        
-        Format as bullet points under each category.'''
-        
-        response = openai_client.chat.completions.create(
-            model="gpt-4o",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        analysis = response.choices[0].message.content
-        return jsonify({'success': True, 'analysis': analysis})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
