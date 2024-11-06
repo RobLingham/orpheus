@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Orpheus - Pitch Practice</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://unpkg.com/feather-icons"></script>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <div class="logo-container">
+                <img src="{{ url_for('static', filename='images/logo.svg') }}" alt="Orpheus Logo" class="logo">
+                <h1>Orpheus</h1>
+            </div>
+            <div class="theme-toggle">
+                <i data-feather="sun"></i>
+                <label class="switch">
+                    <input type="checkbox" id="theme-switch">
+                    <span class="slider round"></span>
+                </label>
+                <i data-feather="moon"></i>
+            </div>
+        </header>
+
+        <main class="card">
+            <div class="card-header">
+                <h2>Pitch Practice</h2>
+                <p>Perfect your pitch with AI-powered feedback</p>
+            </div>
+
+            <div class="card-content">
+                <div id="stage-selection" class="step">
+                    <h3>Who are we pitching to today?</h3>
+                    <div class="grid-buttons" id="pitch-stages"></div>
+                </div>
+
+                <div id="time-selection" class="step hidden">
+                    <button class="back-button" onclick="goBack()">
+                        <i data-feather="arrow-left"></i> Back
+                    </button>
+                    <h3>Got it! How much time do you want to have?</h3>
+                    <div class="flex-buttons" id="time-options"></div>
+                </div>
+
+                <div id="ready-screen" class="step hidden">
+                    <button class="back-button" onclick="goBack()">
+                        <i data-feather="arrow-left"></i> Back
+                    </button>
+                    <div class="text-center">
+                        <p id="ready-message"></p>
+                        <div class="button-group">
+                            <button class="primary-button" onclick="startSession()">Let's Go</button>
+                            <button class="secondary-button" onclick="resetSession()">Reset</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="recording-screen" class="step hidden">
+                    <div class="timer-display">
+                        <i data-feather="clock"></i>
+                        <span id="time-remaining"></span>
+                    </div>
+
+                    <button id="record-button" class="record-button">
+                        <i data-feather="mic"></i>
+                    </button>
+                    <p id="recording-status" class="text-center">Click to start recording</p>
+
+                    <div class="transcript-area">
+                        <div id="transcript"></div>
+                    </div>
+
+                    <button class="feedback-button" onclick="generateFeedback()">
+                        Generate Feedback
+                    </button>
+
+                    <div id="feedback-section" class="hidden">
+                        <h3>Feedback:</h3>
+                        <ul id="feedback-list"></ul>
+                    </div>
+
+                    <button class="reset-button" onclick="resetSession()">
+                        <i data-feather="refresh-cw"></i> Reset Session
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='js/app.js') }}"></script>
+</body>
+</html>
