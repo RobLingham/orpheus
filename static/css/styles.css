@@ -1,31 +1,32 @@
 :root {
-    --primary: #007bff;
     --background: #ffffff;
-    --card-background: #ffffff;
-    --text: #000000;
-    --border: #e2e8f0;
-    --muted: #64748b;
+    --foreground: #000000;
+    --primary: #007bff;
+    --secondary: #6c757d;
+    --border: #dee2e6;
+    --card-bg: #ffffff;
+    --hover: #f8f9fa;
+    --text-muted: #6c757d;
 }
 
 [data-theme="dark"] {
     --background: #1a1a1a;
-    --card-background: #2d2d2d;
-    --text: #ffffff;
-    --border: #404040;
-    --muted: #a0aec0;
-}
-
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
+    --foreground: #ffffff;
+    --primary: #0d6efd;
+    --secondary: #6c757d;
+    --border: #2d2d2d;
+    --card-bg: #232323;
+    --hover: #2d2d2d;
+    --text-muted: #a0a0a0;
 }
 
 body {
-    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
     background-color: var(--background);
-    color: var(--text);
-    transition: all 0.3s ease;
+    color: var(--foreground);
+    font-family: system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 0;
+    transition: background-color 0.3s ease;
 }
 
 .container {
@@ -79,7 +80,7 @@ header {
     left: 0;
     right: 0;
     bottom: 0;
-    background-color: #ccc;
+    background-color: var(--secondary);
     transition: .4s;
     border-radius: 34px;
 }
@@ -104,99 +105,112 @@ input:checked + .slider:before {
     transform: translateX(26px);
 }
 
-.card {
-    background-color: var(--card-background);
+.main-card {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     padding: 2rem;
 }
 
-.card-header {
-    margin-bottom: 2rem;
-}
-
-.step {
-    display: none;
-}
-
-.step.active {
-    display: block;
+.step-container {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
 }
 
 .grid-buttons {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1rem;
-    margin-top: 1rem;
 }
 
-.flex-buttons {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 1rem;
-    justify-content: center;
-}
-
-button {
+.btn {
     padding: 0.75rem 1.5rem;
-    border-radius: 6px;
     border: 1px solid var(--border);
-    background-color: transparent;
-    color: var(--text);
+    border-radius: 4px;
+    background-color: var(--card-bg);
+    color: var(--foreground);
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s ease;
 }
 
-button:hover {
+.btn:hover {
+    background-color: var(--hover);
+    transform: translateY(-2px);
+}
+
+.primary-btn {
     background-color: var(--primary);
     color: white;
 }
 
-.record-button {
+.record-btn {
     width: 96px;
     height: 96px;
     border-radius: 50%;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
     margin: 2rem auto;
 }
 
-.record-button.recording {
-    background-color: #dc3545;
-    color: white;
-}
-
-.transcript-area {
+.transcript-container {
     border: 1px solid var(--border);
-    border-radius: 6px;
+    border-radius: 4px;
     padding: 1rem;
     margin: 1rem 0;
-    height: 150px;
+    max-height: 200px;
     overflow-y: auto;
 }
 
-.feedback-list {
-    list-style-type: disc;
-    padding-left: 1.5rem;
-    margin-top: 1rem;
+.feedback-container {
+    margin-top: 2rem;
 }
 
 .hidden {
     display: none;
 }
 
-/* Rainbow shimmer effect */
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--foreground);
+    cursor: pointer;
+    padding: 0.5rem;
+}
+
+.timer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    font-size: 2rem;
+    font-family: monospace;
+}
+
 @keyframes rainbow-shimmer {
     0% { background-position: 0% 50%; }
     50% { background-position: 100% 50%; }
     100% { background-position: 0% 50%; }
 }
 
-.rainbow-shimmer:hover {
-    background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff);
+.btn:hover {
+    background-image: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff);
     background-size: 200% 200%;
     animation: rainbow-shimmer 3s ease infinite;
     color: white;
     border: none;
+}
+
+@media (max-width: 768px) {
+    .grid-buttons {
+        grid-template-columns: 1fr;
+    }
 }
