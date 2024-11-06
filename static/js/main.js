@@ -58,12 +58,53 @@ function showScreen(screenName) {
     });
 }
 
-// ... [Rest of the file remains the same until the DOMContentLoaded event]
+function updateRecordingUI() {
+    const recordBtn = document.getElementById('recordBtn');
+    const statusText = document.querySelector('.recording-status');
+    if (!recordBtn || !statusText) return;
+
+    const micIcon = recordBtn.querySelector('i');
+    if (micIcon) {
+        micIcon.setAttribute('data-feather', window.pitchPracticeState.isRecording ? 'mic-off' : 'mic');
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
+
+    if (window.pitchPracticeState.isRecording) {
+        statusText.textContent = 'Click to stop recording';
+        recordBtn.classList.add('recording');
+    } else {
+        statusText.textContent = 'Click to start recording';
+        recordBtn.classList.remove('recording');
+    }
+}
+
+function startRecording() {
+    if (!recognition) return;
+    recognition.start();
+    window.pitchPracticeState.isRecording = true;
+    updateRecordingUI();
+}
+
+function stopRecording() {
+    if (!recognition) return;
+    recognition.stop();
+    window.pitchPracticeState.isRecording = false;
+    updateRecordingUI();
+}
 
 document.addEventListener('DOMContentLoaded', function() {
     if (typeof feather !== 'undefined') {
         feather.replace();
     }
+
+    document.querySelectorAll('.btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+            document.querySelectorAll('.btn').forEach(b => b.classList.remove('active'));
+            this.classList.add('active');
+        });
+    });
 
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
@@ -77,6 +118,4 @@ document.addEventListener('DOMContentLoaded', function() {
             localStorage.setItem('theme', newTheme);
         });
     }
-
-    // ... [Rest of the event handlers remain the same]
 });
