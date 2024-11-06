@@ -38,7 +38,7 @@ def generate_ai_feedback(transcript: str, stage: str) -> list:
 
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=[{"role": "user", "content": prompt}]
         )
         feedback = response.choices[0].message.content
@@ -52,33 +52,27 @@ def generate_question_or_objection(transcript: str, stage: str) -> dict:
     Transcript: {transcript}
     
     Generate a challenging but constructive question that an investor might ask.
-    Format your response as a JSON object with two fields:
-    1. "type": either "question" or "objection"
-    2. "content": your actual question or objection
-    
-    Example: {{"type": "question", "content": "What is your target market size?"}}
+    Return your response in this exact format:
+    {{"type": "question", "content": "your question here"}}
     Make it specific to the pitch content."""
 
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"}
         )
-        response_text = response.choices[0].message.content
         
-        # Parse and validate JSON response
         try:
-            parsed = json.loads(response_text)
+            parsed = json.loads(response.choices[0].message.content)
             if not isinstance(parsed, dict) or 'type' not in parsed or 'content' not in parsed:
                 raise ValueError("Invalid response format")
             return parsed
-        except json.JSONDecodeError as e:
-            print(f"JSON parsing error: {str(e)}")
+        except json.JSONDecodeError:
             raise ValueError("Invalid JSON response from OpenAI")
             
     except Exception as e:
-        print(f"Error generating question: {str(e)}")
+        print(f"Error generating question:", e)
         return {
             "type": "question",
             "content": "Could you elaborate more on your business model?"
@@ -135,31 +129,33 @@ def generate_question():
 
 @app.route('/api/analyze-responses', methods=['POST'])
 def analyze_responses():
-    data = request.json
-    responses = data.get('responses', [])
-    stage = data.get('stage')
-    
-    # Format all Q&A interactions for analysis
-    qa_text = "\n".join([
-        f"Q: {r['question']}\nA: {r['response']}"
-        for r in responses
-    ])
-    
-    prompt = f'''Analyze this {stage} pitch Q&A session:
-    {qa_text}
-    
-    Provide feedback on:
-    1. Answer Quality & Completeness
-    2. Handling of Objections
-    3. Consistency Across Answers
-    4. Technical Accuracy
-    5. Overall Communication Style
-    
-    Format as bullet points under each category.'''
-    
     try:
+        data = request.json
+        responses = data.get('responses', [])
+        stage = data.get('stage')
+        
+        if not responses or not stage:
+            return jsonify({'success': False, 'message': 'Missing responses or stage'}), 400
+        
+        qa_text = "\n".join([
+            f"Q: {r['question']}\nA: {r['response']}"
+            for r in responses
+        ])
+        
+        prompt = f'''Analyze this {stage} pitch Q&A session:
+        {qa_text}
+        
+        Provide feedback on:
+        1. Answer Quality & Completeness
+        2. Handling of Objections
+        3. Consistency Across Answers
+        4. Technical Accuracy
+        5. Overall Communication Style
+        
+        Format as bullet points under each category.'''
+        
         response = openai_client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=[{"role": "user", "content": prompt}]
         )
         analysis = response.choices[0].message.content

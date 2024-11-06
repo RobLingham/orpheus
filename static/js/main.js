@@ -1,4 +1,16 @@
-[Previous content from line 1-21 remains the same...]
+let recognition = null;
+let isRecording = false;
+let timer = null;
+let incrementTimer = null;
+
+window.pitchPracticeState = {
+    currentStep: 'stage',
+    selectedStage: '',
+    selectedTime: '',
+    selectedPitchType: 'straight',
+    timeRemaining: 0,
+    incrementTimeRemaining: 45
+};
 
 function showScreen(screenName) {
     document.querySelectorAll('.btn').forEach(btn => {
@@ -35,12 +47,128 @@ function showScreen(screenName) {
     if (screenName === 'recording') {
         const feedbackBtn = document.getElementById('feedbackBtn');
         if (feedbackBtn) {
-            feedbackBtn.textContent = state.selectedPitchType === 'qa' ? 'Generate Question/Objection' : 'Generate Feedback';
+            feedbackBtn.textContent = window.pitchPracticeState.selectedPitchType === 'qa' ? 
+                'Generate Question/Objection' : 'Generate Feedback';
         }
     }
 }
 
-[Previous content from line 53-143 remains the same...]
+function formatTime(seconds) {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+function updateTimer() {
+    const timeDisplay = document.getElementById('timeDisplay');
+    if (timeDisplay) {
+        timeDisplay.textContent = formatTime(window.pitchPracticeState.timeRemaining);
+    }
+}
+
+function updateIncrementTimer() {
+    const incrementDisplay = document.getElementById('incrementDisplay');
+    if (incrementDisplay) {
+        incrementDisplay.textContent = formatTime(window.pitchPracticeState.incrementTimeRemaining);
+    }
+}
+
+function startRecording() {
+    if (!('webkitSpeechRecognition' in window)) {
+        alert('Speech recognition is not supported in this browser. Please use Chrome.');
+        return;
+    }
+
+    recognition = new webkitSpeechRecognition();
+    recognition.continuous = true;
+    recognition.interimResults = true;
+
+    recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+            .map(result => result[0].transcript)
+            .join('');
+        document.getElementById('transcript').textContent = transcript;
+    };
+
+    recognition.start();
+    isRecording = true;
+
+    timer = setInterval(() => {
+        if (window.pitchPracticeState.timeRemaining > 0) {
+            window.pitchPracticeState.timeRemaining--;
+            updateTimer();
+        } else {
+            stopRecording();
+        }
+    }, 1000);
+
+    if (window.pitchPracticeState.selectedPitchType === 'qa') {
+        incrementTimer = setInterval(() => {
+            if (window.pitchPracticeState.incrementTimeRemaining > 0) {
+                window.pitchPracticeState.incrementTimeRemaining--;
+                updateIncrementTimer();
+            } else {
+                stopRecording();
+                generateQuestion();
+            }
+        }, 1000);
+    }
+}
+
+function stopRecording() {
+    if (recognition) {
+        recognition.stop();
+    }
+    isRecording = false;
+    clearInterval(timer);
+    clearInterval(incrementTimer);
+}
+
+async function generateFeedback() {
+    const transcript = document.getElementById('transcript')?.textContent;
+    if (!transcript) {
+        alert('Please record your pitch first!');
+        return;
+    }
+
+    try {
+        const response = await fetch('/api/generate-feedback', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                transcript: transcript,
+                stage: window.pitchPracticeState.selectedStage
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to generate feedback');
+        }
+
+        const feedbackList = document.getElementById('feedbackList');
+        if (feedbackList) {
+            feedbackList.innerHTML = data.feedback
+                .filter(item => item.trim())
+                .map(item => `<li>${item}</li>`)
+                .join('');
+        }
+
+        const feedbackContainer = document.getElementById('feedbackContainer');
+        if (feedbackContainer) {
+            feedbackContainer.classList.remove('hidden');
+        }
+    } catch (error) {
+        console.error('Error generating feedback:', error);
+        alert('Failed to generate feedback. Please try again.');
+    }
+}
 
 async function generateQuestion() {
     stopRecording();  // This stops the recording and pauses timer
@@ -51,12 +179,6 @@ async function generateQuestion() {
         return;
     }
 
-    const state = window.pitchPracticeState;
-    const questionsList = document.getElementById('questionsList');
-    const continuePitchBtn = document.getElementById('continuePitchBtn');
-
-    if (!questionsList || !continuePitchBtn) return;
-
     try {
         const response = await fetch('/api/generate-question', {
             method: 'POST',
@@ -65,27 +187,45 @@ async function generateQuestion() {
             },
             body: JSON.stringify({
                 transcript: transcript,
-                stage: state.selectedStage
+                stage: window.pitchPracticeState.selectedStage
             })
         });
 
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+
         const data = await response.json();
-        if (data.success && data.response) {
-            const question = data.response;
-            const questionElement = document.createElement('div');
-            questionElement.className = 'question-item';
-            questionElement.innerHTML = `
-                <h4>${question.type === 'question' ? 'Question' : 'Objection'}</h4>
-                <p>${question.content}</p>
-                <div class="response" id="response-${Date.now()}"></div>
-            `;
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to generate question');
+        }
+
+        const question = data.response;
+        if (!question || !question.content) {
+            throw new Error('Invalid question format received');
+        }
+
+        const questionElement = document.createElement('div');
+        questionElement.className = 'question-item';
+        questionElement.innerHTML = `
+            <h4>${question.type === 'question' ? 'Question' : 'Objection'}</h4>
+            <p>${question.content}</p>
+            <div class="response" id="response-${Date.now()}"></div>
+        `;
+        
+        const questionsList = document.getElementById('questionsList');
+        if (questionsList) {
             questionsList.appendChild(questionElement);
             questionsList.scrollTop = questionsList.scrollHeight;
-            
+        }
+        
+        const continuePitchBtn = document.getElementById('continuePitchBtn');
+        if (continuePitchBtn) {
             continuePitchBtn.style.display = 'block';
         }
     } catch (error) {
         console.error('Error generating question:', error);
+        alert('Failed to generate question. Please try again.');
     }
 }
 
@@ -111,12 +251,19 @@ async function analyzeResponses() {
             })
         });
         
-        const data = await response.json();
-        if (data.success) {
-            displayAnalysis(data.analysis);
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
         }
+
+        const data = await response.json();
+        if (!data.success) {
+            throw new Error(data.message || 'Failed to analyze responses');
+        }
+
+        displayAnalysis(data.analysis);
     } catch (error) {
         console.error('Error analyzing responses:', error);
+        alert('Failed to analyze responses. Please try again.');
     }
 }
 
@@ -145,9 +292,88 @@ function displayAnalysis(analysis) {
     feedbackContainer.classList.remove('hidden');
 }
 
-[Previous content remains the same until the DOM event listeners...]
+// Event Listeners
+document.addEventListener('DOMContentLoaded', () => {
+    const stageButtons = document.querySelectorAll('.stage-btn');
+    stageButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            window.pitchPracticeState.selectedStage = button.dataset.value;
+            showScreen('time');
+        });
+    });
 
-    // End Session Button
+    const timeButtons = document.querySelectorAll('.time-btn');
+    timeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            const minutes = parseInt(button.dataset.value);
+            window.pitchPracticeState.selectedTime = minutes;
+            window.pitchPracticeState.timeRemaining = minutes * 60;
+            showScreen('pitchType');
+        });
+    });
+
+    const pitchTypeButtons = document.querySelectorAll('.pitch-type-btn');
+    pitchTypeButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            window.pitchPracticeState.selectedPitchType = button.dataset.value;
+            showScreen('ready');
+        });
+    });
+
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            showScreen('recording');
+            startRecording();
+        });
+    }
+
+    const resetBtn = document.getElementById('resetBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            window.pitchPracticeState = {
+                currentStep: 'stage',
+                selectedStage: '',
+                selectedTime: '',
+                selectedPitchType: 'straight',
+                timeRemaining: 0,
+                incrementTimeRemaining: 45
+            };
+            showScreen('stage');
+        });
+    }
+
+    const recordBtn = document.getElementById('recordBtn');
+    if (recordBtn) {
+        recordBtn.addEventListener('click', () => {
+            if (isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+    }
+
+    const feedbackBtn = document.getElementById('feedbackBtn');
+    if (feedbackBtn) {
+        feedbackBtn.addEventListener('click', () => {
+            if (window.pitchPracticeState.selectedPitchType === 'qa') {
+                generateQuestion();
+            } else {
+                generateFeedback();
+            }
+        });
+    }
+
+    const continuePitchBtn = document.getElementById('continuePitchBtn');
+    if (continuePitchBtn) {
+        continuePitchBtn.addEventListener('click', () => {
+            window.pitchPracticeState.incrementTimeRemaining = 45;
+            startRecording();
+            continuePitchBtn.style.display = 'none';
+        });
+    }
+
     const endSessionBtn = document.getElementById('endSessionBtn');
     if (endSessionBtn) {
         endSessionBtn.addEventListener('click', () => {
@@ -160,4 +386,24 @@ function displayAnalysis(analysis) {
         });
     }
 
-[Rest of the previous content remains the same...]
+    const backButtons = document.querySelectorAll('.back-btn');
+    backButtons.forEach(button => {
+        button.addEventListener('click', () => {
+            switch (window.pitchPracticeState.currentStep) {
+                case 'time':
+                    showScreen('stage');
+                    break;
+                case 'pitchType':
+                    showScreen('time');
+                    break;
+                case 'ready':
+                    showScreen('pitchType');
+                    break;
+                case 'recording':
+                    showScreen('ready');
+                    stopRecording();
+                    break;
+            }
+        });
+    });
+});
