@@ -1,3 +1,50 @@
+// Global utility functions
+function updateRecordingUI() {
+    const recordBtn = document.getElementById('recordBtn');
+    const statusText = document.querySelector('.recording-status');
+    
+    if (window.pitchPracticeState.isRecording) {
+        recordBtn.innerHTML = feather.icons['mic-off'].toSvg();
+        statusText.textContent = 'Click to stop recording';
+        recordBtn.classList.add('recording');
+    } else {
+        recordBtn.innerHTML = feather.icons.mic.toSvg();
+        statusText.textContent = 'Click to start recording';
+        recordBtn.classList.remove('recording');
+    }
+    feather.replace();
+}
+
+function startTimer() {
+    const state = window.pitchPracticeState;
+    if (state.timer) clearInterval(state.timer);
+    updateTimerDisplay();
+    state.timer = setInterval(() => {
+        if (state.timeRemaining > 0) {
+            state.timeRemaining--;
+            updateTimerDisplay();
+        } else {
+            stopRecording();
+        }
+    }, 1000);
+}
+
+function stopTimer() {
+    const state = window.pitchPracticeState;
+    if (state.timer) {
+        clearInterval(state.timer);
+        state.timer = null;
+    }
+}
+
+function updateTimerDisplay() {
+    const state = window.pitchPracticeState;
+    const minutes = Math.floor(state.timeRemaining / 60);
+    const seconds = state.timeRemaining % 60;
+    document.getElementById('timeDisplay').textContent = 
+        `${minutes}:${seconds.toString().padStart(2, '0')}`;
+}
+
 // Global recording functions
 function startRecording() {
     if (!('webkitSpeechRecognition' in window)) {
@@ -162,54 +209,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function toggleRecording() {
-        if (state.isRecording) {
+        if (window.pitchPracticeState.isRecording) {
             stopRecording();
         } else {
             startRecording();
         }
-    }
-
-    function updateRecordingUI() {
-        const recordBtn = document.getElementById('recordBtn');
-        const statusText = document.querySelector('.recording-status');
-        
-        if (state.isRecording) {
-            recordBtn.innerHTML = feather.icons['mic-off'].toSvg();
-            statusText.textContent = 'Click to stop recording';
-            recordBtn.classList.add('recording');
-        } else {
-            recordBtn.innerHTML = feather.icons.mic.toSvg();
-            statusText.textContent = 'Click to start recording';
-            recordBtn.classList.remove('recording');
-        }
-        feather.replace();
-    }
-
-    function startTimer() {
-        if (state.timer) clearInterval(state.timer);
-        updateTimerDisplay();
-        state.timer = setInterval(() => {
-            if (state.timeRemaining > 0) {
-                state.timeRemaining--;
-                updateTimerDisplay();
-            } else {
-                stopRecording();
-            }
-        }, 1000);
-    }
-
-    function stopTimer() {
-        if (state.timer) {
-            clearInterval(state.timer);
-            state.timer = null;
-        }
-    }
-
-    function updateTimerDisplay() {
-        const minutes = Math.floor(state.timeRemaining / 60);
-        const seconds = state.timeRemaining % 60;
-        document.getElementById('timeDisplay').textContent = 
-            `${minutes}:${seconds.toString().padStart(2, '0')}`;
     }
 
     function generateFeedback() {
