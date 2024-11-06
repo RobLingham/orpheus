@@ -55,7 +55,9 @@ function updateRecordingUI() {
         statusText.textContent = 'Click to start recording';
         recordBtn.classList.remove('recording');
     }
-    feather.replace();
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
 }
 
 function startTimer() {
@@ -134,17 +136,14 @@ async function saveTranscript() {
 }
 
 function resetSession() {
-    // Stop recording if active
     if (window.pitchPracticeState.isRecording) {
         stopRecording();
     }
     
-    // Clear timer if active
     if (window.pitchPracticeState.timer) {
         clearInterval(window.pitchPracticeState.timer);
     }
     
-    // Reset state
     window.pitchPracticeState = {
         currentStep: 'stage',
         selectedStage: '',
@@ -155,7 +154,6 @@ function resetSession() {
         timer: null
     };
     
-    // Clear UI
     const transcript = document.getElementById('transcript');
     const feedbackContainer = document.getElementById('feedbackContainer');
     const timeDisplay = document.getElementById('timeDisplay');
@@ -164,7 +162,6 @@ function resetSession() {
     if (feedbackContainer) feedbackContainer.classList.add('hidden');
     if (timeDisplay) timeDisplay.textContent = '0:00';
     
-    // Reset all buttons
     document.querySelectorAll('.btn').forEach(btn => {
         btn.classList.remove('active');
     });
@@ -251,10 +248,11 @@ async function generateFeedback() {
 
     feedbackBtn.disabled = true;
     feedbackBtn.innerHTML = '<i data-feather="loader" class="animate-spin"></i> Generating feedback...';
-    feather.replace();
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
 
     try {
-        // Ensure transcript is saved before generating feedback
         const savedSuccessfully = await saveTranscript();
         if (!savedSuccessfully) {
             throw new Error('Failed to save transcript');
@@ -276,7 +274,27 @@ async function generateFeedback() {
         if (data.success && Array.isArray(data.feedback)) {
             feedbackList.innerHTML = data.feedback
                 .filter(item => item && item.trim())
-                .map(feedback => `<li>${feedback}</li>`)
+                .map(feedback => {
+                    const section = document.createElement('div');
+                    section.className = 'feedback-section';
+                    
+                    // Extract section title (assuming format "1. Title: content")
+                    const titleMatch = feedback.match(/^\d+\.\s+([^:]+):/);
+                    if (titleMatch) {
+                        const [fullMatch, title] = titleMatch;
+                        const content = feedback.replace(fullMatch, '').trim();
+                        
+                        section.innerHTML = `
+                            <h4>${title}</h4>
+                            <ul>
+                                <li>${content}</li>
+                            </ul>
+                        `;
+                    } else {
+                        section.innerHTML = `<ul><li>${feedback}</li></ul>`;
+                    }
+                    return section.outerHTML;
+                })
                 .join('');
             feedbackContainer.classList.remove('hidden');
         } else {
@@ -288,29 +306,33 @@ async function generateFeedback() {
     } finally {
         feedbackBtn.disabled = false;
         feedbackBtn.innerHTML = 'Generate Feedback';
-        feather.replace();
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
     }
 }
 
 // Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Feather icons
-    feather.replace();
+    if (typeof feather !== 'undefined') {
+        feather.replace();
+    }
 
     // Theme Toggle
     const themeToggle = document.getElementById('themeToggle');
-    if (!themeToggle) return;  // Guard clause
-    
-    // Set initial theme
-    const currentTheme = localStorage.getItem('theme') || 'light';
-    document.body.setAttribute('data-theme', currentTheme);
-    themeToggle.checked = currentTheme === 'dark';
-    
-    themeToggle.addEventListener('change', () => {
-        const newTheme = themeToggle.checked ? 'dark' : 'light';
-        document.body.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-    });
+    if (themeToggle) {
+        // Set initial theme
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        document.body.setAttribute('data-theme', currentTheme);
+        themeToggle.checked = currentTheme === 'dark';
+        
+        themeToggle.addEventListener('change', () => {
+            const newTheme = themeToggle.checked ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
+        });
+    }
 
     // Stage Selection
     document.querySelectorAll('.stage-btn').forEach(button => {
@@ -375,23 +397,34 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 
     // Start Button
-    document.getElementById('startBtn')?.addEventListener('click', () => {
-        showScreen('recording');
-    });
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) {
+        startBtn.addEventListener('click', () => {
+            showScreen('recording');
+        });
+    }
 
     // Reset Buttons
-    document.getElementById('resetBtn')?.addEventListener('click', resetSession);
-    document.getElementById('resetSessionBtn')?.addEventListener('click', resetSession);
+    const resetBtn = document.getElementById('resetBtn');
+    const resetSessionBtn = document.getElementById('resetSessionBtn');
+    if (resetBtn) resetBtn.addEventListener('click', resetSession);
+    if (resetSessionBtn) resetSessionBtn.addEventListener('click', resetSession);
 
     // Record Button
-    document.getElementById('recordBtn')?.addEventListener('click', () => {
-        if (window.pitchPracticeState.isRecording) {
-            stopRecording();
-        } else {
-            startRecording();
-        }
-    });
+    const recordBtn = document.getElementById('recordBtn');
+    if (recordBtn) {
+        recordBtn.addEventListener('click', () => {
+            if (window.pitchPracticeState.isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+    }
 
     // Feedback Button
-    document.getElementById('feedbackBtn')?.addEventListener('click', generateFeedback);
+    const feedbackBtn = document.getElementById('feedbackBtn');
+    if (feedbackBtn) {
+        feedbackBtn.addEventListener('click', generateFeedback);
+    }
 });
