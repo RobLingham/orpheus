@@ -107,7 +107,7 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    function startRecording() {
+    window.startRecording = function() {
         if (!('webkitSpeechRecognition' in window)) {
             alert('Speech recognition is not supported in your browser');
             return;
@@ -143,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
         startTimer();
     }
 
-    function stopRecording() {
+    window.stopRecording = function() {
         if (state.recognition) {
             state.recognition.stop();
         }
@@ -204,6 +204,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function generateFeedback() {
+        // Stop recording first
+        stopRecording();
+        
         const transcript = document.getElementById('transcript').textContent;
         if (!transcript) {
             alert('Please record your pitch first!');
