@@ -1,3 +1,6 @@
+// Global variables
+let welcomeHeader;
+
 // Global utility functions
 function updateRecordingUI() {
     const recordBtn = document.getElementById('recordBtn');
@@ -65,6 +68,14 @@ function resetSession() {
         btn.classList.remove('active');
     });
 
+    stopRecording();
+    document.getElementById('transcript').textContent = '';
+    document.getElementById('feedbackContainer').classList.add('hidden');
+    
+    if (welcomeHeader) {
+        welcomeHeader.style.display = 'block';
+    }
+    
     // Reset state
     window.pitchPracticeState = {
         currentStep: 'stage',
@@ -76,11 +87,7 @@ function resetSession() {
         recognition: null,
         timer: null
     };
-
-    stopRecording();
-    document.getElementById('transcript').textContent = '';
-    document.getElementById('feedbackContainer').classList.add('hidden');
-    welcomeHeader.style.display = 'block';
+    
     showScreen('stage');
 }
 
@@ -148,6 +155,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Initialize Feather icons
     feather.replace();
 
+    // Initialize welcomeHeader
+    welcomeHeader = document.querySelector('.card-header');
+
     // DOM Elements
     const screens = {
         stage: document.getElementById('stageSelection'),
@@ -156,8 +166,6 @@ document.addEventListener('DOMContentLoaded', function() {
         ready: document.getElementById('readyScreen'),
         recording: document.getElementById('recordingScreen')
     };
-
-    const welcomeHeader = document.querySelector('.card-header');
 
     // Theme Toggle
     const themeToggle = document.getElementById('themeToggle');
@@ -181,7 +189,9 @@ document.addEventListener('DOMContentLoaded', function() {
             button.classList.add('active');
             
             window.pitchPracticeState.selectedStage = button.dataset.value;
-            welcomeHeader.style.display = 'none';
+            if (welcomeHeader) {
+                welcomeHeader.style.display = 'none';
+            }
             showScreen('time');
             updateTimeOptions();
         });
@@ -240,7 +250,9 @@ document.addEventListener('DOMContentLoaded', function() {
             element.classList.toggle('hidden', name !== screenName);
         });
         
-        welcomeHeader.style.display = screenName === 'stage' ? 'block' : 'none';
+        if (welcomeHeader) {
+            welcomeHeader.style.display = screenName === 'stage' ? 'block' : 'none';
+        }
     }
 
     function handleBack() {
@@ -248,9 +260,12 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.classList.remove('active');
         });
 
-        switch (window.pitchPracticeState.currentStep) {
+        const state = window.pitchPracticeState;
+        switch (state.currentStep) {
             case 'time':
-                welcomeHeader.style.display = 'block';
+                if (welcomeHeader) {
+                    welcomeHeader.style.display = 'block';
+                }
                 showScreen('stage');
                 break;
             case 'pitchType':
@@ -260,8 +275,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 showScreen('pitchType');
                 break;
             case 'recording':
-                showScreen('ready');
                 stopRecording();
+                document.getElementById('transcript').textContent = '';
+                document.getElementById('feedbackContainer').classList.add('hidden');
+                showScreen('ready');
                 break;
         }
     }
