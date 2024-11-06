@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
 from openai import OpenAI
+import json
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pitches.db'
@@ -51,22 +52,37 @@ def generate_question_or_objection(transcript: str, stage: str) -> dict:
     Transcript: {transcript}
     
     Generate a challenging but constructive question that an investor might ask.
-    Return your response in this exact format:
-    {{"type": "question", "content": "your question here"}}
+    Format your response as a JSON object with two fields:
+    1. "type": either "question" or "objection"
+    2. "content": your actual question or objection
+    
+    Example: {{"type": "question", "content": "What is your target market size?"}}
     Make it specific to the pitch content."""
 
     try:
         response = openai_client.chat.completions.create(
             model="gpt-4",
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
         )
         response_text = response.choices[0].message.content
-        # Parse the response text as JSON
-        import json
-        return json.loads(response_text)
+        
+        # Parse and validate JSON response
+        try:
+            parsed = json.loads(response_text)
+            if not isinstance(parsed, dict) or 'type' not in parsed or 'content' not in parsed:
+                raise ValueError("Invalid response format")
+            return parsed
+        except json.JSONDecodeError as e:
+            print(f"JSON parsing error: {str(e)}")
+            raise ValueError("Invalid JSON response from OpenAI")
+            
     except Exception as e:
         print(f"Error generating question: {str(e)}")
-        return {"type": "question", "content": "Could you elaborate more on your business model?"}
+        return {
+            "type": "question",
+            "content": "Could you elaborate more on your business model?"
+        }
 
 @app.route('/')
 def index():
@@ -114,6 +130,40 @@ def generate_question():
         
         question = generate_question_or_objection(transcript, stage)
         return jsonify({'success': True, 'response': question})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/analyze-responses', methods=['POST'])
+def analyze_responses():
+    data = request.json
+    responses = data.get('responses', [])
+    stage = data.get('stage')
+    
+    # Format all Q&A interactions for analysis
+    qa_text = "\n".join([
+        f"Q: {r['question']}\nA: {r['response']}"
+        for r in responses
+    ])
+    
+    prompt = f'''Analyze this {stage} pitch Q&A session:
+    {qa_text}
+    
+    Provide feedback on:
+    1. Answer Quality & Completeness
+    2. Handling of Objections
+    3. Consistency Across Answers
+    4. Technical Accuracy
+    5. Overall Communication Style
+    
+    Format as bullet points under each category.'''
+    
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}]
+        )
+        analysis = response.choices[0].message.content
+        return jsonify({'success': True, 'analysis': analysis})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
