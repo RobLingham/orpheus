@@ -13,12 +13,14 @@ window.pitchPracticeState = {
     selectedPitchType: '',
     isRecording: false,
     timeRemaining: 0,
-    timer: null
+    incrementTimeRemaining: 0,
+    timer: null,
+    incrementTimer: null,
+    currentTranscriptSegment: ''
 };
 
 // Global utility functions
 function showScreen(screenName) {
-    // Clear all active states when changing screens
     document.querySelectorAll('.btn').forEach(btn => {
         btn.classList.remove('active');
     });
@@ -36,6 +38,20 @@ function showScreen(screenName) {
             element.classList.toggle('hidden', name !== screenName);
         }
     });
+
+    // Update ready screen content for Q&A mode
+    if (screenName === 'ready' && window.pitchPracticeState.selectedPitchType === 'qa') {
+        const readyContent = document.querySelector('.ready-content p');
+        if (readyContent) {
+            readyContent.textContent = "During this session you'll field questions and face objections. You'll be able to speak for 90 second increments (or until you hit the microphone button), receive questions/objections, respond to them, or continue on in your pitch.";
+        }
+    }
+
+    // Show/hide Q&A mode elements
+    const qaElements = document.querySelectorAll('.qa-mode-only');
+    qaElements.forEach(element => {
+        element.classList.toggle('show', window.pitchPracticeState.selectedPitchType === 'qa');
+    });
 }
 
 function updateRecordingUI() {
@@ -44,26 +60,35 @@ function updateRecordingUI() {
     if (!recordBtn || !statusText) return;
 
     const micIcon = recordBtn.querySelector('i');
-    if (!micIcon) return;
+    if (micIcon) {
+        micIcon.setAttribute('data-feather', window.pitchPracticeState.isRecording ? 'mic-off' : 'mic');
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+    }
 
     if (window.pitchPracticeState.isRecording) {
-        micIcon.setAttribute('data-feather', 'mic-off');
         statusText.textContent = 'Click to stop recording';
         recordBtn.classList.add('recording');
     } else {
-        micIcon.setAttribute('data-feather', 'mic');
         statusText.textContent = 'Click to start recording';
         recordBtn.classList.remove('recording');
-    }
-    if (typeof feather !== 'undefined') {
-        feather.replace();
     }
 }
 
 function startTimer() {
     const state = window.pitchPracticeState;
     if (state.timer) clearInterval(state.timer);
+    if (state.incrementTimer) clearInterval(state.incrementTimer);
+
     updateTimerDisplay();
+    
+    // Set increment time for Q&A mode
+    if (state.selectedPitchType === 'qa') {
+        state.incrementTimeRemaining = 90;
+        startIncrementTimer();
+    }
+
     state.timer = setInterval(() => {
         if (state.timeRemaining > 0) {
             state.timeRemaining--;
@@ -74,36 +99,99 @@ function startTimer() {
     }, 1000);
 }
 
+function startIncrementTimer() {
+    const state = window.pitchPracticeState;
+    const incrementDisplay = document.getElementById('incrementDisplay');
+    
+    if (incrementDisplay) {
+        incrementDisplay.textContent = formatTime(state.incrementTimeRemaining);
+    }
+
+    state.incrementTimer = setInterval(() => {
+        if (state.incrementTimeRemaining > 0) {
+            state.incrementTimeRemaining--;
+            if (incrementDisplay) {
+                incrementDisplay.textContent = formatTime(state.incrementTimeRemaining);
+            }
+        } else {
+            // Time's up for this segment
+            stopRecording();
+            generateQuestion();
+        }
+    }, 1000);
+}
+
 function stopTimer() {
     const state = window.pitchPracticeState;
     if (state.timer) {
         clearInterval(state.timer);
         state.timer = null;
     }
+    if (state.incrementTimer) {
+        clearInterval(state.incrementTimer);
+        state.incrementTimer = null;
+    }
+}
+
+function formatTime(seconds) {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
 }
 
 function updateTimerDisplay() {
     const state = window.pitchPracticeState;
-    const minutes = Math.floor(state.timeRemaining / 60);
-    const seconds = state.timeRemaining % 60;
     const timeDisplay = document.getElementById('timeDisplay');
     if (timeDisplay) {
-        timeDisplay.textContent = `${minutes}:${seconds.toString().padStart(2, '0')}`;
+        timeDisplay.textContent = formatTime(state.timeRemaining);
     }
 }
 
-function updateTimeOptions() {
-    const timeButtons = document.querySelectorAll('.time-btn');
-    const isElevator = window.pitchPracticeState.selectedStage === 'elevator';
-    
-    timeButtons.forEach(btn => {
-        const value = parseInt(btn.dataset.value);
-        if (isElevator) {
-            btn.style.display = (value === 1 || value === 5) ? '' : 'none';
-        } else {
-            btn.style.display = value === 1 ? 'none' : '';
+async function generateQuestion() {
+    const state = window.pitchPracticeState;
+    const transcript = document.getElementById('transcript')?.textContent;
+    const questionsList = document.getElementById('questionsList');
+    const continuePitchBtn = document.getElementById('continuePitchBtn');
+
+    if (!transcript || !questionsList || !continuePitchBtn) return;
+
+    try {
+        const response = await fetch('/api/generate-question', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                transcript: transcript,
+                stage: state.selectedStage
+            })
+        });
+
+        const data = await response.json();
+        if (data.success && data.response) {
+            const question = JSON.parse(data.response);
+            const questionElement = document.createElement('div');
+            questionElement.className = 'question-item';
+            questionElement.innerHTML = `
+                <h4>${question.type === 'question' ? 'Question' : 'Objection'}</h4>
+                <p>${question.content}</p>
+                <div class="response" id="response-${Date.now()}"></div>
+            `;
+            questionsList.appendChild(questionElement);
+            questionsList.scrollTop = questionsList.scrollHeight;
+            
+            // Show continue button
+            continuePitchBtn.style.display = 'block';
         }
-    });
+    } catch (error) {
+        console.error('Error generating question:', error);
+    }
+}
+
+function continuePitch() {
+    const state = window.pitchPracticeState;
+    state.incrementTimeRemaining = 90;
+    startRecording();
 }
 
 async function saveTranscript() {
@@ -136,13 +224,13 @@ async function saveTranscript() {
 }
 
 function resetSession() {
-    if (window.pitchPracticeState.isRecording) {
+    const state = window.pitchPracticeState;
+    if (state.isRecording) {
         stopRecording();
     }
     
-    if (window.pitchPracticeState.timer) {
-        clearInterval(window.pitchPracticeState.timer);
-    }
+    if (state.timer) clearInterval(state.timer);
+    if (state.incrementTimer) clearInterval(state.incrementTimer);
     
     window.pitchPracticeState = {
         currentStep: 'stage',
@@ -151,16 +239,23 @@ function resetSession() {
         selectedPitchType: '',
         isRecording: false,
         timeRemaining: 0,
-        timer: null
+        incrementTimeRemaining: 0,
+        timer: null,
+        incrementTimer: null,
+        currentTranscriptSegment: ''
     };
     
     const transcript = document.getElementById('transcript');
     const feedbackContainer = document.getElementById('feedbackContainer');
     const timeDisplay = document.getElementById('timeDisplay');
+    const incrementDisplay = document.getElementById('incrementDisplay');
+    const questionsList = document.getElementById('questionsList');
 
     if (transcript) transcript.textContent = '';
     if (feedbackContainer) feedbackContainer.classList.add('hidden');
     if (timeDisplay) timeDisplay.textContent = '0:00';
+    if (incrementDisplay) incrementDisplay.textContent = '0:00';
+    if (questionsList) questionsList.innerHTML = '';
     
     document.querySelectorAll('.btn').forEach(btn => {
         btn.classList.remove('active');
@@ -190,9 +285,11 @@ function startRecording() {
     recognition.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
         if (event.error === 'no-speech') {
-            alert('No speech was detected. Please try again.');
-        } else {
-            alert('An error occurred with speech recognition. Please try again.');
+            // Handle no speech error gracefully
+            const statusText = document.querySelector('.recording-status');
+            if (statusText) {
+                statusText.textContent = 'No speech detected. Click to try again.';
+            }
         }
         stopRecording();
     };
@@ -278,7 +375,6 @@ async function generateFeedback() {
                     const section = document.createElement('div');
                     section.className = 'feedback-section';
                     
-                    // Extract section title (assuming format "1. Title: content")
                     const titleMatch = feedback.match(/^\d+\.\s+([^:]+):/);
                     if (titleMatch) {
                         const [fullMatch, title] = titleMatch;
@@ -322,7 +418,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Theme Toggle
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
-        // Set initial theme
         const currentTheme = localStorage.getItem('theme') || 'light';
         document.body.setAttribute('data-theme', currentTheme);
         themeToggle.checked = currentTheme === 'dark';
@@ -344,7 +439,6 @@ document.addEventListener('DOMContentLoaded', function() {
             
             window.pitchPracticeState.selectedStage = button.dataset.value;
             showScreen('time');
-            updateTimeOptions();
         });
     });
 
@@ -374,6 +468,12 @@ document.addEventListener('DOMContentLoaded', function() {
             showScreen('ready');
         });
     });
+
+    // Continue Pitch Button
+    const continuePitchBtn = document.getElementById('continuePitchBtn');
+    if (continuePitchBtn) {
+        continuePitchBtn.addEventListener('click', continuePitch);
+    }
 
     // Back Buttons
     document.querySelectorAll('.back-btn').forEach(button => {
@@ -419,6 +519,15 @@ document.addEventListener('DOMContentLoaded', function() {
             } else {
                 startRecording();
             }
+        });
+    }
+
+    // End Session Button
+    const endSessionBtn = document.getElementById('endSessionBtn');
+    if (endSessionBtn) {
+        endSessionBtn.addEventListener('click', () => {
+            stopRecording();
+            generateFeedback();
         });
     }
 

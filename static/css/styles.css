@@ -9,6 +9,8 @@
     --text-muted: #6B7280;
     --destructive: #DC2626;
     --destructive-hover: #B91C1C;
+    --success: #10B981;
+    --success-hover: #059669;
     --font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
 }
 
@@ -23,6 +25,8 @@
     --text-muted: #9CA3AF;
     --destructive: #EF4444;
     --destructive-hover: #DC2626;
+    --success: #34D399;
+    --success-hover: #10B981;
 }
 
 @keyframes rainbow-shimmer {
@@ -235,13 +239,26 @@ input:checked + .slider:before {
     gap: 2rem;
 }
 
+.timer-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
 .timer {
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 1rem;
-    font-size: 2rem;
+    gap: 0.5rem;
+    font-size: 1.5rem;
     font-family: monospace;
+}
+
+.increment-timer {
+    font-size: 1.25rem;
+    color: var(--text-muted);
 }
 
 .record-btn {
@@ -329,6 +346,71 @@ input:checked + .slider:before {
     color: var(--primary);
     position: absolute;
     left: -1.2rem;
+}
+
+.qa-mode-only {
+    display: none;
+}
+
+.qa-mode-only.show {
+    display: block;
+}
+
+.qa-container {
+    width: 100%;
+    margin: 1rem 0;
+}
+
+.questions-list {
+    margin-bottom: 1rem;
+}
+
+.question-item {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.question-item h4 {
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.question-item p {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.question-item .response {
+    border-left: 2px solid var(--primary);
+    padding-left: 1rem;
+    margin-top: 0.5rem;
+    color: var(--text-muted);
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+#endSessionBtn {
+    background-color: var(--success);
+    color: white;
+    border: none;
+}
+
+#endSessionBtn:hover {
+    background-color: var(--success-hover);
+}
+
+#continuePitchBtn {
+    width: 100%;
+    margin: 1rem 0;
 }
 
 .hidden {

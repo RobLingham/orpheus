@@ -78,9 +78,17 @@
             <div id="recordingScreen" class="step-container hidden">
                 <button class="back-btn"><i data-feather="arrow-left"></i> Back</button>
                 <div class="recording-content">
-                    <div class="timer">
-                        <i data-feather="clock"></i>
-                        <span id="timeDisplay">0:00</span>
+                    <div class="timer-container">
+                        <div class="timer total-timer">
+                            <i data-feather="clock"></i>
+                            <span>Total Time: </span>
+                            <span id="timeDisplay">0:00</span>
+                        </div>
+                        <div class="timer increment-timer qa-mode-only hidden">
+                            <i data-feather="watch"></i>
+                            <span>Current Segment: </span>
+                            <span id="incrementDisplay">0:00</span>
+                        </div>
                     </div>
                     <button class="record-btn" id="recordBtn">
                         <i data-feather="mic"></i>
@@ -89,14 +97,23 @@
                     <div class="transcript-container">
                         <div id="transcript" class="transcript"></div>
                     </div>
+                    <div id="qaContainer" class="qa-container qa-mode-only hidden">
+                        <div id="questionsList" class="questions-list"></div>
+                        <button class="btn primary-btn" id="continuePitchBtn">Continue Pitch</button>
+                    </div>
                     <button class="btn primary-btn" id="feedbackBtn">Generate Feedback</button>
                     <div id="feedbackContainer" class="feedback-container hidden">
                         <h3>Feedback:</h3>
                         <ul id="feedbackList"></ul>
                     </div>
-                    <button class="btn" id="resetSessionBtn">
-                        <i data-feather="refresh-cw"></i> Reset Session
-                    </button>
+                    <div class="button-group">
+                        <button class="btn" id="resetSessionBtn">
+                            <i data-feather="refresh-cw"></i> Reset Session
+                        </button>
+                        <button class="btn" id="endSessionBtn">
+                            <i data-feather="check-circle"></i> End Session
+                        </button>
+                    </div>
                 </div>
             </div>
         </main>

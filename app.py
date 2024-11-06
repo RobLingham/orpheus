@@ -46,6 +46,25 @@ def generate_ai_feedback(transcript: str, stage: str) -> list:
         print(f"Error generating feedback: {str(e)}")
         return ["Unable to generate AI feedback at this time. Please try again later."]
 
+def generate_question_or_objection(transcript: str, stage: str) -> dict:
+    prompt = f"""Based on this {stage} pitch transcript, generate a relevant investor question or objection:
+    Transcript: {transcript}
+    
+    Generate a challenging but constructive question that an investor might ask.
+    Format as JSON with 'type' (either 'question' or 'objection') and 'content' fields.
+    Make it specific to the pitch content."""
+
+    try:
+        response = openai_client.chat.completions.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
+        )
+        return response.choices[0].message.content
+    except Exception as e:
+        print(f"Error generating question: {str(e)}")
+        return {"type": "question", "content": "Could you elaborate more on your business model?"}
+
 @app.route('/')
 def index():
     return render_template('index.html')
@@ -77,6 +96,21 @@ def get_feedback():
         
         feedback = generate_ai_feedback(transcript, stage)
         return jsonify({'success': True, 'feedback': feedback})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+@app.route('/api/generate-question', methods=['POST'])
+def generate_question():
+    try:
+        data = request.json
+        transcript = data.get('transcript')
+        stage = data.get('stage')
+        
+        if not transcript or not stage:
+            return jsonify({'success': False, 'message': 'Missing transcript or stage'}), 400
+        
+        question = generate_question_or_objection(transcript, stage)
+        return jsonify({'success': True, 'response': question})
     except Exception as e:
         return jsonify({'success': False, 'message': str(e)}), 500
 
