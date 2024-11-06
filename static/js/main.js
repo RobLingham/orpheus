@@ -52,12 +52,25 @@ function updateTimeOptions() {
     timeButtons.forEach(btn => {
         const value = parseInt(btn.dataset.value);
         if (isElevator) {
+            // For elevator pitch, show only 1 and 5 minutes
             btn.style.display = (value === 1 || value === 5) ? '' : 'none';
         } else {
-            btn.style.display = (value === 1) ? 'none' : '';
+            // For other pitches, hide 1 minute option
+            btn.style.display = value === 1 ? 'none' : '';
         }
     });
 }
+
+// Initialize global state
+window.pitchPracticeState = {
+    currentStep: 'stage',
+    selectedStage: '',
+    selectedTime: '',
+    isRecording: false,
+    timeRemaining: 0,
+    recognition: null,
+    timer: null
+};
 
 // Global recording functions
 function startRecording() {
@@ -107,23 +120,9 @@ function stopRecording() {
     stopTimer();
 }
 
-// Initialize global state
-window.pitchPracticeState = {
-    currentStep: 'stage',
-    selectedStage: '',
-    selectedTime: '',
-    isRecording: false,
-    timeRemaining: 0,
-    recognition: null,
-    timer: null
-};
-
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Feather icons
     feather.replace();
-
-    // State management
-    const state = window.pitchPracticeState;
 
     // DOM Elements
     const screens = {
@@ -157,7 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             button.classList.add('active');
             
-            state.selectedStage = button.dataset.value;
+            window.pitchPracticeState.selectedStage = button.dataset.value;
             welcomeHeader.style.display = 'none';
             showScreen('time');
             updateTimeOptions();
@@ -172,8 +171,8 @@ document.addEventListener('DOMContentLoaded', function() {
             });
             button.classList.add('active');
             
-            state.selectedTime = parseInt(button.dataset.value);
-            state.timeRemaining = state.selectedTime * 60;
+            window.pitchPracticeState.selectedTime = parseInt(button.dataset.value);
+            window.pitchPracticeState.timeRemaining = window.pitchPracticeState.selectedTime * 60;
             showScreen('ready');
         });
     });
@@ -186,7 +185,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start Button
     document.getElementById('startBtn').addEventListener('click', () => {
         showScreen('recording');
-        // Remove auto-start recording
     });
 
     // Reset Buttons
@@ -200,7 +198,7 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('feedbackBtn').addEventListener('click', generateFeedback);
 
     function showScreen(screenName) {
-        state.currentStep = screenName;
+        window.pitchPracticeState.currentStep = screenName;
         Object.entries(screens).forEach(([name, element]) => {
             element.classList.toggle('hidden', name !== screenName);
         });
@@ -215,7 +213,7 @@ document.addEventListener('DOMContentLoaded', function() {
             btn.classList.remove('active');
         });
 
-        switch (state.currentStep) {
+        switch (window.pitchPracticeState.currentStep) {
             case 'time':
                 welcomeHeader.style.display = 'block';
                 showScreen('stage');
