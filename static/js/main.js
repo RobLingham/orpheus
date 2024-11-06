@@ -45,6 +45,20 @@ function updateTimerDisplay() {
         `${minutes}:${seconds.toString().padStart(2, '0')}`;
 }
 
+function updateTimeOptions() {
+    const timeButtons = document.querySelectorAll('.time-btn');
+    const isElevator = window.pitchPracticeState.selectedStage === 'elevator';
+    
+    timeButtons.forEach(btn => {
+        const value = parseInt(btn.dataset.value);
+        if (isElevator) {
+            btn.style.display = (value === 1 || value === 5) ? '' : 'none';
+        } else {
+            btn.style.display = (value === 1) ? 'none' : '';
+        }
+    });
+}
+
 // Global recording functions
 function startRecording() {
     if (!('webkitSpeechRecognition' in window)) {
@@ -119,6 +133,8 @@ document.addEventListener('DOMContentLoaded', function() {
         recording: document.getElementById('recordingScreen')
     };
 
+    const welcomeHeader = document.querySelector('.card-header');
+
     // Theme Toggle
     const themeToggle = document.getElementById('themeToggle');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
@@ -142,7 +158,9 @@ document.addEventListener('DOMContentLoaded', function() {
             button.classList.add('active');
             
             state.selectedStage = button.dataset.value;
+            welcomeHeader.style.display = 'none';
             showScreen('time');
+            updateTimeOptions();
         });
     });
 
@@ -168,7 +186,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Start Button
     document.getElementById('startBtn').addEventListener('click', () => {
         showScreen('recording');
-        startRecording();
+        // Remove auto-start recording
     });
 
     // Reset Buttons
@@ -186,6 +204,9 @@ document.addEventListener('DOMContentLoaded', function() {
         Object.entries(screens).forEach(([name, element]) => {
             element.classList.toggle('hidden', name !== screenName);
         });
+        
+        // Show welcome header only on stage selection screen
+        welcomeHeader.style.display = screenName === 'stage' ? 'block' : 'none';
     }
 
     function handleBack() {
@@ -196,10 +217,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
         switch (state.currentStep) {
             case 'time':
+                welcomeHeader.style.display = 'block';
                 showScreen('stage');
                 break;
             case 'ready':
                 showScreen('time');
+                updateTimeOptions();
                 break;
             case 'recording':
                 showScreen('ready');
@@ -255,6 +278,7 @@ document.addEventListener('DOMContentLoaded', function() {
         stopRecording();
         document.getElementById('transcript').textContent = '';
         document.getElementById('feedbackContainer').classList.add('hidden');
+        welcomeHeader.style.display = 'block';
         showScreen('stage');
     }
 });
