@@ -1,17 +1,68 @@
+// Global recording functions
+function startRecording() {
+    if (!('webkitSpeechRecognition' in window)) {
+        alert('Speech recognition is not supported in your browser');
+        return;
+    }
+
+    const state = window.pitchPracticeState;
+    state.recognition = new webkitSpeechRecognition();
+    state.recognition.continuous = true;
+    state.recognition.interimResults = true;
+
+    state.recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+            .map(result => result[0])
+            .map(result => result.transcript)
+            .join(' ');
+        
+        document.getElementById('transcript').textContent = transcript;
+    };
+
+    state.recognition.onerror = (event) => {
+        console.error('Speech recognition error:', event.error);
+        stopRecording();
+    };
+
+    state.recognition.onend = () => {
+        if (state.isRecording) {
+            state.recognition.start();
+        }
+    };
+
+    state.recognition.start();
+    state.isRecording = true;
+    updateRecordingUI();
+    startTimer();
+}
+
+function stopRecording() {
+    const state = window.pitchPracticeState;
+    if (state.recognition) {
+        state.recognition.stop();
+    }
+    state.isRecording = false;
+    updateRecordingUI();
+    stopTimer();
+}
+
+// Initialize global state
+window.pitchPracticeState = {
+    currentStep: 'stage',
+    selectedStage: '',
+    selectedTime: '',
+    isRecording: false,
+    timeRemaining: 0,
+    recognition: null,
+    timer: null
+};
+
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize Feather icons
     feather.replace();
 
     // State management
-    let state = {
-        currentStep: 'stage',
-        selectedStage: '',
-        selectedTime: '',
-        isRecording: false,
-        timeRemaining: 0,
-        recognition: null,
-        timer: null
-    };
+    const state = window.pitchPracticeState;
 
     // DOM Elements
     const screens = {
@@ -38,11 +89,9 @@ document.addEventListener('DOMContentLoaded', function() {
     // Stage Selection
     document.querySelectorAll('.stage-btn').forEach(button => {
         button.addEventListener('click', () => {
-            // Remove active class from all buttons
             document.querySelectorAll('.stage-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
-            // Add active class to clicked button
             button.classList.add('active');
             
             state.selectedStage = button.dataset.value;
@@ -93,6 +142,11 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function handleBack() {
+        // Clear active state from all buttons
+        document.querySelectorAll('.stage-btn, .time-btn').forEach(btn => {
+            btn.classList.remove('active');
+        });
+
         switch (state.currentStep) {
             case 'time':
                 showScreen('stage');
@@ -105,51 +159,6 @@ document.addEventListener('DOMContentLoaded', function() {
                 stopRecording();
                 break;
         }
-    }
-
-    window.startRecording = function() {
-        if (!('webkitSpeechRecognition' in window)) {
-            alert('Speech recognition is not supported in your browser');
-            return;
-        }
-
-        state.recognition = new webkitSpeechRecognition();
-        state.recognition.continuous = true;
-        state.recognition.interimResults = true;
-
-        state.recognition.onresult = (event) => {
-            const transcript = Array.from(event.results)
-                .map(result => result[0])
-                .map(result => result.transcript)
-                .join(' ');
-            
-            document.getElementById('transcript').textContent = transcript;
-        };
-
-        state.recognition.onerror = (event) => {
-            console.error('Speech recognition error:', event.error);
-            stopRecording();
-        };
-
-        state.recognition.onend = () => {
-            if (state.isRecording) {
-                state.recognition.start();
-            }
-        };
-
-        state.recognition.start();
-        state.isRecording = true;
-        updateRecordingUI();
-        startTimer();
-    }
-
-    window.stopRecording = function() {
-        if (state.recognition) {
-            state.recognition.stop();
-        }
-        state.isRecording = false;
-        updateRecordingUI();
-        stopTimer();
     }
 
     function toggleRecording() {
@@ -230,7 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function resetSession() {
-        state = {
+        window.pitchPracticeState = {
             currentStep: 'stage',
             selectedStage: '',
             selectedTime: '',
