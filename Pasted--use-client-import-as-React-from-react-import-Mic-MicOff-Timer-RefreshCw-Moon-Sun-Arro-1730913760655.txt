@@ -1,0 +1,288 @@
+"use client"
+
+import * as React from "react"
+import { Mic, MicOff, Timer, RefreshCw, Moon, Sun, ArrowLeft } from "lucide-react"
+import Image from "next/image"
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Label } from "@/components/ui/label"
+import { Switch } from "@/components/ui/switch"
+import { useTheme } from "next-themes"
+import { ScrollArea } from "@/components/ui/scroll-area"
+
+const PITCH_STAGES = [
+  { value: "elevator", label: "Elevator Pitch" },
+  { value: "angel", label: "Angel Investment" },
+  { value: "pre-seed", label: "Pre-Seed" },
+  { value: "seed", label: "Seed" },
+  { value: "series-a", label: "Series A" },
+  { value: "series-b", label: "Series B" },
+  { value: "series-c", label: "Series C" },
+  { value: "series-d", label: "Series D" },
+]
+
+const TIME_OPTIONS = [
+  { value: "1", label: "1 minute" },
+  { value: "5", label: "5 minutes" },
+  { value: "15", label: "15 minutes" },
+  { value: "30", label: "30 minutes" },
+]
+
+type Step = "stage" | "time" | "ready" | "recording"
+
+export default function Component() {
+  const [currentStep, setCurrentStep] = React.useState<Step>("stage")
+  const [selectedStage, setSelectedStage] = React.useState("")
+  const [selectedTime, setSelectedTime] = React.useState("")
+  const [isRecording, setIsRecording] = React.useState(false)
+  const [timeRemaining, setTimeRemaining] = React.useState(0)
+  const { theme, setTheme } = useTheme()
+  const [mounted, setMounted] = React.useState(false)
+  const [transcript, setTranscript] = React.useState("")
+  const [feedback, setFeedback] = React.useState<string[]>([])
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  React.useEffect(() => {
+    let interval: NodeJS.Timeout
+    if (isRecording && timeRemaining > 0) {
+      interval = setInterval(() => {
+        setTimeRemaining((prev) => prev - 1)
+      }, 1000)
+    } else if (timeRemaining === 0 && isRecording) {
+      setIsRecording(false)
+    }
+    return () => clearInterval(interval)
+  }, [isRecording, timeRemaining])
+
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60)
+    const secs = seconds % 60
+    return `${mins}:${secs.toString().padStart(2, "0")}`
+  }
+
+  const handleStageSelect = (value: string) => {
+    setSelectedStage(value)
+    setCurrentStep("time")
+  }
+
+  const handleTimeSelect = (value: string) => {
+    setSelectedTime(value)
+    setTimeRemaining(parseInt(value) * 60)
+    setCurrentStep("ready")
+  }
+
+  const handleStart = () => {
+    setCurrentStep("recording")
+    setIsRecording(true)
+    startRecording()
+  }
+
+  const handleReset = () => {
+    setCurrentStep("stage")
+    setSelectedStage("")
+    setSelectedTime("")
+    setIsRecording(false)
+    setTimeRemaining(0)
+    setTranscript("")
+    setFeedback([])
+  }
+
+  const toggleTheme = () => {
+    setTheme(theme === "light" ? "dark" : "light")
+  }
+
+  const goBack = () => {
+    switch (currentStep) {
+      case "time":
+        setCurrentStep("stage")
+        break
+      case "ready":
+        setCurrentStep("time")
+        break
+      case "recording":
+        setCurrentStep("ready")
+        setIsRecording(false)
+        break
+    }
+  }
+
+  const startRecording = () => {
+    if ("webkitSpeechRecognition" in window) {
+      const recognition = new (window as any).webkitSpeechRecognition()
+      recognition.continuous = true
+      recognition.interimResults = true
+
+      recognition.onresult = (event: any) => {
+        const transcript = Array.from(event.results)
+          .map((result: any) => result[0])
+          .map((result) => result.transcript)
+          .join("")
+
+        setTranscript(transcript)
+      }
+
+      recognition.start()
+    } else {
+      console.log("Speech recognition not supported")
+    }
+  }
+
+  const generateFeedback = () => {
+    // This is a mock function. In a real application, you would send the transcript to your backend for analysis.
+    const mockFeedback = [
+      "Great introduction! You clearly stated the problem your startup is solving.",
+      "Consider providing more specific details about your target market.",
+      "Your explanation of the revenue model was clear and concise.",
+      "Try to speak a bit slower when discussing technical aspects of your product.",
+      "Good job highlighting your team's expertise and experience.",
+    ]
+    setFeedback(mockFeedback)
+  }
+
+  if (!mounted) return null
+
+  return (
+    <div className="flex min-h-screen flex-col items-center bg-background text-foreground">
+      <style jsx global>{`
+        @keyframes rainbow-shimmer {
+          0% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+          100% { background-position: 0% 50%; }
+        }
+        .rainbow-shimmer:hover {
+          background-image: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff);
+          background-size: 200% 200%;
+          animation: rainbow-shimmer 3s ease infinite;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          text-fill-color: transparent;
+        }
+      `}</style>
+      <div className="container mx-auto flex max-w-2xl flex-col items-center px-4 py-8">
+        <div className="mb-8 flex items-center justify-between w-full">
+          <div className="flex items-center gap-4">
+            <Image src="/placeholder.svg?height=64&width=64" alt="Orpheus Logo" width={64} height={64} className="rounded-full" />
+            <h1 className="text-3xl font-bold">Orpheus</h1>
+          </div>
+          <div className="flex items-center gap-2">
+            <Sun className="h-4 w-4" />
+            <Switch checked={theme === "dark"} onCheckedChange={toggleTheme} />
+            <Moon className="h-4 w-4" />
+          </div>
+        </div>
+
+        <Card className="w-full">
+          <CardHeader>
+            <CardTitle className="text-2xl">Pitch Practice</CardTitle>
+            <CardDescription className="text-base">Perfect your pitch with AI-powered feedback</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {currentStep !== "stage" && (
+              <Button variant="ghost" size="sm" className="mb-4" onClick={goBack}>
+                <ArrowLeft className="mr-2 h-4 w-4" />
+                Back
+              </Button>
+            )}
+            {currentStep === "stage" && (
+              <div className="space-y-4">
+                <Label className="text-lg">Who are we pitching to today?</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  {PITCH_STAGES.map((stage) => (
+                    <Button
+                      key={stage.value}
+                      variant="outline"
+                      onClick={() => handleStageSelect(stage.value)}
+                      className="justify-start text-base rainbow-shimmer"
+                    >
+                      {stage.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {currentStep === "time" && (
+              <div className="space-y-4">
+                <p className="text-lg">Got it! How much time do you want to have?</p>
+                <div className="flex flex-wrap justify-center gap-4">
+                  {TIME_OPTIONS.map((option) => (
+                    <Button
+                      key={option.value}
+                      variant="outline"
+                      onClick={() => handleTimeSelect(option.value)}
+                      className="flex-1 text-base rainbow-shimmer"
+                    >
+                      {option.label}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {currentStep === "ready" && (
+              <div className="space-y-6 text-center">
+                <p className="text-lg">
+                  Ok, I've set up the timer for {selectedTime} {parseInt(selectedTime) === 1 ? "minute" : "minutes"}. Take a moment, collect your thoughts, and let me
+                  know when you're ready.
+                </p>
+                <div className="flex justify-center gap-4">
+                  <Button onClick={handleStart} size="lg" className="text-base">
+                    Let's Go
+                  </Button>
+                  <Button onClick={handleReset} variant="outline" size="lg" className="text-base">
+                    Reset
+                  </Button>
+                </div>
+              </div>
+            )}
+
+            {currentStep === "recording" && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-center gap-4">
+                  <Timer className="h-6 w-6" />
+                  <span className="text-2xl font-mono">{formatTime(timeRemaining)}</span>
+                </div>
+                <div className="flex justify-center">
+                  <Button
+                    size="lg"
+                    className={`h-24 w-24 rounded-full ${isRecording ? "bg-destructive hover:bg-destructive/90" : ""}`}
+                    onClick={() => setIsRecording(!isRecording)}
+                  >
+                    {isRecording ? <MicOff className="h-8 w-8" /> : <Mic className="h-8 w-8" />}
+                  </Button>
+                </div>
+                <p className="text-base text-center text-muted-foreground">
+                  {isRecording ? "Click to stop recording" : "Click to start recording"}
+                </p>
+                <ScrollArea className="h-40 w-full rounded-md border p-4">
+                  <p className="text-sm">{transcript}</p>
+                </ScrollArea>
+                <Button onClick={generateFeedback} className="w-full">
+                  Generate Feedback
+                </Button>
+                {feedback.length > 0 && (
+                  <div className="space-y-2">
+                    <h3 className="text-lg font-semibold">Feedback:</h3>
+                    <ul className="list-disc pl-5 space-y-1">
+                      {feedback.map((item, index) => (
+                        <li key={index} className="text-sm">{item}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                <Button onClick={handleReset} variant="outline" size="sm" className="mt-4 text-base">
+                  <RefreshCw className="mr-2 h-4 w-4" />
+                  Reset Session
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  )
+}
