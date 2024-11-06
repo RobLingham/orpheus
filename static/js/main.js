@@ -41,10 +41,11 @@ function showScreen(screenName) {
 function updateRecordingUI() {
     const recordBtn = document.getElementById('recordBtn');
     const statusText = document.querySelector('.recording-status');
+    if (!recordBtn || !statusText) return;
+
     const micIcon = recordBtn.querySelector('i');
-    
-    if (!micIcon) return;  // Guard clause
-    
+    if (!micIcon) return;
+
     if (window.pitchPracticeState.isRecording) {
         micIcon.setAttribute('data-feather', 'mic-off');
         statusText.textContent = 'Click to stop recording';
@@ -105,7 +106,7 @@ function updateTimeOptions() {
 
 async function saveTranscript() {
     const state = window.pitchPracticeState;
-    const transcript = document.getElementById('transcript').textContent;
+    const transcript = document.getElementById('transcript')?.textContent;
     
     if (!transcript) {
         return false;
@@ -155,9 +156,13 @@ function resetSession() {
     };
     
     // Clear UI
-    document.getElementById('transcript').textContent = '';
-    document.getElementById('feedbackContainer').classList.add('hidden');
-    document.getElementById('timeDisplay').textContent = '0:00';
+    const transcript = document.getElementById('transcript');
+    const feedbackContainer = document.getElementById('feedbackContainer');
+    const timeDisplay = document.getElementById('timeDisplay');
+
+    if (transcript) transcript.textContent = '';
+    if (feedbackContainer) feedbackContainer.classList.add('hidden');
+    if (timeDisplay) timeDisplay.textContent = '0:00';
     
     // Reset all buttons
     document.querySelectorAll('.btn').forEach(btn => {
@@ -179,7 +184,10 @@ function startRecording() {
             .map(result => result.transcript)
             .join(' ');
         
-        document.getElementById('transcript').textContent = transcript;
+        const transcriptElement = document.getElementById('transcript');
+        if (transcriptElement) {
+            transcriptElement.textContent = transcript;
+        }
     };
 
     recognition.onerror = (event) => {
@@ -194,7 +202,12 @@ function startRecording() {
 
     recognition.onend = () => {
         if (window.pitchPracticeState.isRecording) {
-            recognition.start();
+            try {
+                recognition.start();
+            } catch (error) {
+                console.error('Error restarting recognition:', error);
+                stopRecording();
+            }
         }
     };
 
@@ -224,7 +237,7 @@ function stopRecording() {
 async function generateFeedback() {
     stopRecording();
     
-    const transcript = document.getElementById('transcript').textContent;
+    const transcript = document.getElementById('transcript')?.textContent;
     if (!transcript) {
         alert('Please record your pitch first!');
         return;
@@ -234,6 +247,8 @@ async function generateFeedback() {
     const feedbackContainer = document.getElementById('feedbackContainer');
     const feedbackList = document.getElementById('feedbackList');
     
+    if (!feedbackBtn || !feedbackContainer || !feedbackList) return;
+
     feedbackBtn.disabled = true;
     feedbackBtn.innerHTML = '<i data-feather="loader" class="animate-spin"></i> Generating feedback...';
     feather.replace();
@@ -258,22 +273,9 @@ async function generateFeedback() {
 
         const data = await response.json();
         
-        if (data.success) {
-            let feedbackPoints;
-            try {
-                feedbackPoints = typeof data.feedback === 'string' ? 
-                    JSON.parse(data.feedback) : data.feedback;
-            } catch (e) {
-                feedbackPoints = {
-                    feedback: [data.feedback]
-                };
-            }
-
-            const feedbackArray = Array.isArray(feedbackPoints) ? 
-                feedbackPoints : 
-                Object.values(feedbackPoints).flat();
-
-            feedbackList.innerHTML = feedbackArray
+        if (data.success && Array.isArray(data.feedback)) {
+            feedbackList.innerHTML = data.feedback
+                .filter(item => item && item.trim())
                 .map(feedback => `<li>${feedback}</li>`)
                 .join('');
             feedbackContainer.classList.remove('hidden');

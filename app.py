@@ -33,16 +33,15 @@ def generate_ai_feedback(transcript: str, stage: str) -> list:
     4. Delivery and Communication
     5. Areas for Improvement
     
-    Format the response as a JSON array of feedback points."""
+    Format the response as a bullet-point list."""
 
     try:
         response = openai_client.chat.completions.create(
             model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+            messages=[{"role": "user", "content": prompt}]
         )
         feedback = response.choices[0].message.content
-        return feedback
+        return feedback.split('\n')
     except Exception as e:
         print(f"Error generating feedback: {str(e)}")
         return ["Unable to generate AI feedback at this time. Please try again later."]
