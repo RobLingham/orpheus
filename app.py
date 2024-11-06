@@ -37,7 +37,7 @@ def generate_ai_feedback(transcript: str, stage: str) -> list:
 
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4",
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"}
         )
