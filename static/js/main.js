@@ -52,10 +52,8 @@ function updateTimeOptions() {
     timeButtons.forEach(btn => {
         const value = parseInt(btn.dataset.value);
         if (isElevator) {
-            // For elevator pitch, show only 1 and 5 minutes
             btn.style.display = (value === 1 || value === 5) ? '' : 'none';
         } else {
-            // For other pitches, hide 1 minute option
             btn.style.display = value === 1 ? 'none' : '';
         }
     });
@@ -66,6 +64,7 @@ window.pitchPracticeState = {
     currentStep: 'stage',
     selectedStage: '',
     selectedTime: '',
+    selectedPitchType: '', // Added new state property
     isRecording: false,
     timeRemaining: 0,
     recognition: null,
@@ -128,6 +127,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const screens = {
         stage: document.getElementById('stageSelection'),
         time: document.getElementById('timeSelection'),
+        pitchType: document.getElementById('pitchTypeSelection'), // Added new screen
         ready: document.getElementById('readyScreen'),
         recording: document.getElementById('recordingScreen')
     };
@@ -138,7 +138,6 @@ document.addEventListener('DOMContentLoaded', function() {
     const themeToggle = document.getElementById('themeToggle');
     const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
     
-    // Set initial theme based on system preference
     if (prefersDark) {
         document.body.setAttribute('data-theme', 'dark');
         themeToggle.checked = true;
@@ -173,6 +172,19 @@ document.addEventListener('DOMContentLoaded', function() {
             
             window.pitchPracticeState.selectedTime = parseInt(button.dataset.value);
             window.pitchPracticeState.timeRemaining = window.pitchPracticeState.selectedTime * 60;
+            showScreen('pitchType'); // Modified to show pitch type selection
+        });
+    });
+
+    // Pitch Type Selection
+    document.querySelectorAll('.pitch-type-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            document.querySelectorAll('.pitch-type-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            button.classList.add('active');
+            
+            window.pitchPracticeState.selectedPitchType = button.dataset.value;
             showScreen('ready');
         });
     });
@@ -203,13 +215,11 @@ document.addEventListener('DOMContentLoaded', function() {
             element.classList.toggle('hidden', name !== screenName);
         });
         
-        // Show welcome header only on stage selection screen
         welcomeHeader.style.display = screenName === 'stage' ? 'block' : 'none';
     }
 
     function handleBack() {
-        // Clear active state from all buttons
-        document.querySelectorAll('.stage-btn, .time-btn').forEach(btn => {
+        document.querySelectorAll('.stage-btn, .time-btn, .pitch-type-btn').forEach(btn => {
             btn.classList.remove('active');
         });
 
@@ -218,9 +228,11 @@ document.addEventListener('DOMContentLoaded', function() {
                 welcomeHeader.style.display = 'block';
                 showScreen('stage');
                 break;
-            case 'ready':
+            case 'pitchType':
                 showScreen('time');
-                updateTimeOptions();
+                break;
+            case 'ready':
+                showScreen('pitchType');
                 break;
             case 'recording':
                 showScreen('ready');
@@ -238,7 +250,6 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     function generateFeedback() {
-        // Stop recording first
         stopRecording();
         
         const transcript = document.getElementById('transcript').textContent;
@@ -268,6 +279,7 @@ document.addEventListener('DOMContentLoaded', function() {
             currentStep: 'stage',
             selectedStage: '',
             selectedTime: '',
+            selectedPitchType: '',
             isRecording: false,
             timeRemaining: 0,
             recognition: null,
