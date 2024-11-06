@@ -85,30 +85,11 @@ document.addEventListener('DOMContentLoaded', function() {
     // Feedback Button
     document.getElementById('feedbackBtn').addEventListener('click', generateFeedback);
 
-    function showTimeOptions() {
-        const timeButtons = document.querySelectorAll('.time-btn');
-        timeButtons.forEach(button => {
-            const timeValue = button.dataset.value;
-            if (state.selectedStage === 'elevator') {
-                // For elevator pitch, only show 1 and 5 minutes
-                button.classList.toggle('hidden', !['1', '5'].includes(timeValue));
-            } else {
-                // For other pitches, hide 1 minute option
-                button.classList.toggle('hidden', timeValue === '1');
-            }
-        });
-    }
-
     function showScreen(screenName) {
         state.currentStep = screenName;
         Object.entries(screens).forEach(([name, element]) => {
             element.classList.toggle('hidden', name !== screenName);
         });
-
-        // Update time options when showing time screen
-        if (screenName === 'time') {
-            showTimeOptions();
-        }
     }
 
     function handleBack() {
@@ -121,14 +102,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 break;
             case 'recording':
                 showScreen('ready');
-                if (state.isRecording) {
-                    stopRecording();
-                }
+                stopRecording();
                 break;
         }
     }
 
-    function startRecording() {
+    window.startRecording = function() {
         if (!('webkitSpeechRecognition' in window)) {
             alert('Speech recognition is not supported in your browser');
             return;
@@ -164,7 +143,7 @@ document.addEventListener('DOMContentLoaded', function() {
         startTimer();
     }
 
-    function stopRecording() {
+    window.stopRecording = function() {
         if (state.recognition) {
             state.recognition.stop();
         }
@@ -226,9 +205,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     function generateFeedback() {
         // Stop recording first
-        if (state.isRecording) {
-            stopRecording();
-        }
+        stopRecording();
         
         const transcript = document.getElementById('transcript').textContent;
         if (!transcript) {
@@ -262,9 +239,7 @@ document.addEventListener('DOMContentLoaded', function() {
             recognition: null,
             timer: null
         };
-        if (state.isRecording) {
-            stopRecording();
-        }
+        stopRecording();
         document.getElementById('transcript').textContent = '';
         document.getElementById('feedbackContainer').classList.add('hidden');
         showScreen('stage');
