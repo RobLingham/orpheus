@@ -5,10 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orpheus - Pitch Practice</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css" rel="stylesheet">
 </head>
-<body class="light">
+<body>
     <div class="container">
         <header>
             <div class="logo-container">
@@ -19,78 +18,76 @@
                 <i data-feather="sun" class="theme-icon"></i>
                 <label class="switch">
                     <input type="checkbox" id="themeToggle">
-                    <span class="slider round"></span>
+                    <span class="slider"></span>
                 </label>
                 <i data-feather="moon" class="theme-icon"></i>
             </div>
         </header>
 
-        <main class="card main-card">
+        <main class="main-card">
             <div class="card-header">
                 <h2>Pitch Practice</h2>
                 <p class="subtitle">Perfect your pitch with AI-powered feedback</p>
             </div>
 
-            <div class="card-body">
-                <div id="stageSelection" class="step-container">
-                    <h3>Who are we pitching to today?</h3>
-                    <div class="grid-buttons">
-                        <button class="btn stage-btn" data-value="elevator">Elevator Pitch</button>
-                        <button class="btn stage-btn" data-value="angel">Angel Investment</button>
-                        <button class="btn stage-btn" data-value="pre-seed">Pre-Seed</button>
-                        <button class="btn stage-btn" data-value="seed">Seed</button>
-                        <button class="btn stage-btn" data-value="series-a">Series A</button>
-                        <button class="btn stage-btn" data-value="series-b">Series B</button>
-                        <button class="btn stage-btn" data-value="series-c">Series C</button>
-                        <button class="btn stage-btn" data-value="series-d">Series D</button>
+            <div id="stageSelection" class="step-container">
+                <h3>Who are we pitching to today?</h3>
+                <div class="grid-buttons">
+                    <button class="btn stage-btn" data-value="elevator">Elevator Pitch</button>
+                    <button class="btn stage-btn" data-value="angel">Angel Investment</button>
+                    <button class="btn stage-btn" data-value="pre-seed">Pre-Seed</button>
+                    <button class="btn stage-btn" data-value="seed">Seed</button>
+                    <button class="btn stage-btn" data-value="series-a">Series A</button>
+                    <button class="btn stage-btn" data-value="series-b">Series B</button>
+                    <button class="btn stage-btn" data-value="series-c">Series C</button>
+                    <button class="btn stage-btn" data-value="series-d">Series D</button>
+                </div>
+            </div>
+
+            <div id="timeSelection" class="step-container hidden">
+                <button class="back-btn"><i data-feather="arrow-left"></i> Back</button>
+                <h3>How much time do you want to have?</h3>
+                <div class="grid-buttons">
+                    <button class="btn time-btn" data-value="1">1 minute</button>
+                    <button class="btn time-btn" data-value="5">5 minutes</button>
+                    <button class="btn time-btn" data-value="15">15 minutes</button>
+                    <button class="btn time-btn" data-value="30">30 minutes</button>
+                </div>
+            </div>
+
+            <div id="readyScreen" class="step-container hidden">
+                <button class="back-btn"><i data-feather="arrow-left"></i> Back</button>
+                <div class="ready-content">
+                    <p>Take a moment, collect your thoughts, and let me know when you're ready.</p>
+                    <div class="button-group">
+                        <button class="btn primary-btn" id="startBtn">Let's Go</button>
+                        <button class="btn" id="resetBtn">Reset</button>
                     </div>
                 </div>
+            </div>
 
-                <div id="timeSelection" class="step-container hidden">
-                    <button class="back-btn"><i data-feather="arrow-left"></i> Back</button>
-                    <h3>How much time do you want to have?</h3>
-                    <div class="time-buttons">
-                        <button class="btn time-btn" data-value="1">1 minute</button>
-                        <button class="btn time-btn" data-value="5">5 minutes</button>
-                        <button class="btn time-btn" data-value="15">15 minutes</button>
-                        <button class="btn time-btn" data-value="30">30 minutes</button>
+            <div id="recordingScreen" class="step-container hidden">
+                <button class="back-btn"><i data-feather="arrow-left"></i> Back</button>
+                <div class="recording-content">
+                    <div class="timer">
+                        <i data-feather="clock"></i>
+                        <span id="timeDisplay">0:00</span>
                     </div>
-                </div>
-
-                <div id="readyScreen" class="step-container hidden">
-                    <button class="back-btn"><i data-feather="arrow-left"></i> Back</button>
-                    <div class="ready-content">
-                        <p class="ready-text">Take a moment, collect your thoughts, and let me know when you're ready.</p>
-                        <div class="button-group">
-                            <button class="btn primary-btn" id="startBtn">Let's Go</button>
-                            <button class="btn secondary-btn" id="resetBtn">Reset</button>
-                        </div>
+                    <button class="record-btn" id="recordBtn">
+                        <i data-feather="mic"></i>
+                    </button>
+                    <p class="recording-status">Click to start recording</p>
+                    <div class="transcript-container">
+                        <div id="transcript" class="transcript"></div>
                     </div>
-                </div>
-
-                <div id="recordingScreen" class="step-container hidden">
-                    <button class="back-btn"><i data-feather="arrow-left"></i> Back</button>
-                    <div class="recording-content">
-                        <div class="timer">
-                            <i data-feather="clock"></i>
-                            <span id="timeDisplay">0:00</span>
-                        </div>
-                        <button class="record-btn" id="recordBtn">
-                            <i data-feather="mic"></i>
-                        </button>
-                        <p class="recording-status">Click to start recording</p>
-                        <div class="transcript-container">
-                            <div id="transcript" class="transcript"></div>
-                        </div>
-                        <button class="btn primary-btn" id="feedbackBtn">Generate Feedback</button>
-                        <div id="feedbackContainer" class="feedback-container hidden">
-                            <h3>Feedback:</h3>
-                            <ul id="feedbackList"></ul>
-                        </div>
-                        <button class="btn reset-btn" id="resetSessionBtn">
-                            <i data-feather="refresh-cw"></i> Reset Session
-                        </button>
+                    <button class="btn primary-btn" id="feedbackBtn">Generate Feedback</button>
+                    <div id="feedbackContainer" class="feedback-container hidden">
+                        <h3>Feedback:</h3>
+                        <ul id="feedbackList"></ul>
                     </div>
+                    <button class="btn" id="resetSessionBtn">
+                        <i data-feather="refresh-cw"></i> Reset Session
+                    </button>
                 </div>
             </div>
         </main>
