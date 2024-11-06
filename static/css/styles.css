@@ -84,6 +84,29 @@ header {
     font-size: 1rem;
 }
 
+.breadcrumb-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.25rem;
+    padding: 0.5rem 0;
+}
+
+.breadcrumb-item {
+    color: var(--primary);
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.breadcrumb-item:hover {
+    opacity: 0.8;
+}
+
+.breadcrumb-separator {
+    color: var(--text-muted);
+    margin: 0 0.5rem;
+}
+
 .logo-container {
     display: flex;
     align-items: center;

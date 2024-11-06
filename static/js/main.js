@@ -1,10 +1,20 @@
-// Initialize global state and Speech Recognition
 let recognition = null;
 if ('webkitSpeechRecognition' in window) {
     recognition = new webkitSpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
 }
+
+const PITCH_STAGES = [
+    { value: "elevator", label: "Elevator Pitch" },
+    { value: "angel", label: "Angel Investment" },
+    { value: "pre-seed", label: "Pre-Seed" },
+    { value: "seed", label: "Seed" },
+    { value: "series-a", label: "Series A" },
+    { value: "series-b", label: "Series B" },
+    { value: "series-c", label: "Series C" },
+    { value: "series-d", label: "Series D" }
+];
 
 window.pitchPracticeState = {
     currentStep: 'stage',
@@ -19,7 +29,30 @@ window.pitchPracticeState = {
     currentTranscriptSegment: ''
 };
 
-// Global utility functions
+function generateBreadcrumb() {
+    const state = window.pitchPracticeState;
+    const stages = {
+        stage: state.selectedStage ? PITCH_STAGES.find(s => s.value === state.selectedStage)?.label : '',
+        time: state.selectedTime ? `${state.selectedTime} minutes` : '',
+        pitchType: state.selectedPitchType === 'straight' ? 'Straight Pitch' : 'Field Questions & Objections'
+    };
+    
+    let breadcrumb = '';
+    let path = '';
+    
+    Object.entries(stages).forEach(([step, value], index, arr) => {
+        if (value) {
+            path += (path ? ' > ' : '') + value;
+            breadcrumb += `<span class="breadcrumb-item" data-step="${step}">${value}</span>`;
+            if (index < arr.length - 1 && arr[index + 1][1]) {
+                breadcrumb += '<span class="breadcrumb-separator">></span>';
+            }
+        }
+    });
+    
+    return breadcrumb;
+}
+
 function showScreen(screenName) {
     document.querySelectorAll('.btn').forEach(btn => {
         btn.classList.remove('active');
@@ -39,7 +72,16 @@ function showScreen(screenName) {
         }
     });
 
-    // Update ready screen content for Q&A mode
+    const welcomeHeader = document.querySelector('.card-header');
+    if (welcomeHeader) {
+        welcomeHeader.innerHTML = screenName === 'stage' 
+            ? `<h2>Master Your Pitch, Enchant Every Audience.</h2>
+               <p class="subtitle">Practice your pitch, tackle tough objections, answer commonly asked questions, analyze your performance, and level up your pitch deck - all in one place.</p>`
+            : `<div class="breadcrumb-nav">
+                ${generateBreadcrumb()}
+               </div>`;
+    }
+
     if (screenName === 'ready' && window.pitchPracticeState.selectedPitchType === 'qa') {
         const readyContent = document.querySelector('.ready-content p');
         if (readyContent) {
@@ -47,7 +89,6 @@ function showScreen(screenName) {
         }
     }
 
-    // Show/hide Q&A mode elements
     const qaElements = document.querySelectorAll('.qa-mode-only');
     qaElements.forEach(element => {
         element.classList.toggle('show', window.pitchPracticeState.selectedPitchType === 'qa');
@@ -83,7 +124,6 @@ function startTimer() {
 
     updateTimerDisplay();
     
-    // Set increment time for Q&A mode
     if (state.selectedPitchType === 'qa') {
         state.incrementTimeRemaining = 90;
         startIncrementTimer();
@@ -114,7 +154,6 @@ function startIncrementTimer() {
                 incrementDisplay.textContent = formatTime(state.incrementTimeRemaining);
             }
         } else {
-            // Time's up for this segment
             stopRecording();
             generateQuestion();
         }
@@ -169,7 +208,7 @@ async function generateQuestion() {
 
         const data = await response.json();
         if (data.success && data.response) {
-            const question = JSON.parse(data.response);
+            const question = data.response;
             const questionElement = document.createElement('div');
             questionElement.className = 'question-item';
             questionElement.innerHTML = `
@@ -180,7 +219,6 @@ async function generateQuestion() {
             questionsList.appendChild(questionElement);
             questionsList.scrollTop = questionsList.scrollHeight;
             
-            // Show continue button
             continuePitchBtn.style.display = 'block';
         }
     } catch (error) {
@@ -285,7 +323,6 @@ function startRecording() {
     recognition.onerror = (event) => {
         console.error('Speech recognition error:', event.error);
         if (event.error === 'no-speech') {
-            // Handle no speech error gracefully
             const statusText = document.querySelector('.recording-status');
             if (statusText) {
                 statusText.textContent = 'No speech detected. Click to try again.';
@@ -408,14 +445,19 @@ async function generateFeedback() {
     }
 }
 
-// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Feather icons
     if (typeof feather !== 'undefined') {
         feather.replace();
     }
 
-    // Theme Toggle
+    document.querySelector('.card-header').addEventListener('click', (e) => {
+        const item = e.target.closest('.breadcrumb-item');
+        if (item) {
+            const step = item.dataset.step;
+            showScreen(step);
+        }
+    });
+
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
         const currentTheme = localStorage.getItem('theme') || 'light';
@@ -429,7 +471,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Stage Selection
     document.querySelectorAll('.stage-btn').forEach(button => {
         button.addEventListener('click', () => {
             document.querySelectorAll('.stage-btn').forEach(btn => {
@@ -442,7 +483,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Time Selection
     document.querySelectorAll('.time-btn').forEach(button => {
         button.addEventListener('click', () => {
             document.querySelectorAll('.time-btn').forEach(btn => {
@@ -456,7 +496,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Pitch Type Selection
     document.querySelectorAll('.pitch-type-btn').forEach(button => {
         button.addEventListener('click', () => {
             document.querySelectorAll('.pitch-type-btn').forEach(btn => {
@@ -469,13 +508,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Continue Pitch Button
     const continuePitchBtn = document.getElementById('continuePitchBtn');
     if (continuePitchBtn) {
         continuePitchBtn.addEventListener('click', continuePitch);
     }
 
-    // Back Buttons
     document.querySelectorAll('.back-btn').forEach(button => {
         button.addEventListener('click', () => {
             switch (window.pitchPracticeState.currentStep) {
@@ -496,7 +533,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 
-    // Start Button
     const startBtn = document.getElementById('startBtn');
     if (startBtn) {
         startBtn.addEventListener('click', () => {
@@ -504,13 +540,11 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Reset Buttons
     const resetBtn = document.getElementById('resetBtn');
     const resetSessionBtn = document.getElementById('resetSessionBtn');
     if (resetBtn) resetBtn.addEventListener('click', resetSession);
     if (resetSessionBtn) resetSessionBtn.addEventListener('click', resetSession);
 
-    // Record Button
     const recordBtn = document.getElementById('recordBtn');
     if (recordBtn) {
         recordBtn.addEventListener('click', () => {
@@ -522,7 +556,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // End Session Button
     const endSessionBtn = document.getElementById('endSessionBtn');
     if (endSessionBtn) {
         endSessionBtn.addEventListener('click', () => {
@@ -531,7 +564,6 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Feedback Button
     const feedbackBtn = document.getElementById('feedbackBtn');
     if (feedbackBtn) {
         feedbackBtn.addEventListener('click', generateFeedback);
