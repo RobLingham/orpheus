@@ -59,12 +59,37 @@ function updateTimeOptions() {
     });
 }
 
+function resetSession() {
+    // Remove all active classes from buttons
+    document.querySelectorAll('.stage-btn, .time-btn, .pitch-type-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
+    // Reset state
+    window.pitchPracticeState = {
+        currentStep: 'stage',
+        selectedStage: '',
+        selectedTime: '',
+        selectedPitchType: '',
+        isRecording: false,
+        timeRemaining: 0,
+        recognition: null,
+        timer: null
+    };
+
+    stopRecording();
+    document.getElementById('transcript').textContent = '';
+    document.getElementById('feedbackContainer').classList.add('hidden');
+    welcomeHeader.style.display = 'block';
+    showScreen('stage');
+}
+
 // Initialize global state
 window.pitchPracticeState = {
     currentStep: 'stage',
     selectedStage: '',
     selectedTime: '',
-    selectedPitchType: '', // Added new state property
+    selectedPitchType: '',
     isRecording: false,
     timeRemaining: 0,
     recognition: null,
@@ -127,7 +152,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const screens = {
         stage: document.getElementById('stageSelection'),
         time: document.getElementById('timeSelection'),
-        pitchType: document.getElementById('pitchTypeSelection'), // Added new screen
+        pitchType: document.getElementById('pitchTypeSelection'),
         ready: document.getElementById('readyScreen'),
         recording: document.getElementById('recordingScreen')
     };
@@ -172,7 +197,7 @@ document.addEventListener('DOMContentLoaded', function() {
             
             window.pitchPracticeState.selectedTime = parseInt(button.dataset.value);
             window.pitchPracticeState.timeRemaining = window.pitchPracticeState.selectedTime * 60;
-            showScreen('pitchType'); // Modified to show pitch type selection
+            showScreen('pitchType');
         });
     });
 
@@ -272,23 +297,5 @@ document.addEventListener('DOMContentLoaded', function() {
             .map(feedback => `<li>${feedback}</li>`)
             .join('');
         feedbackContainer.classList.remove('hidden');
-    }
-
-    function resetSession() {
-        window.pitchPracticeState = {
-            currentStep: 'stage',
-            selectedStage: '',
-            selectedTime: '',
-            selectedPitchType: '',
-            isRecording: false,
-            timeRemaining: 0,
-            recognition: null,
-            timer: null
-        };
-        stopRecording();
-        document.getElementById('transcript').textContent = '';
-        document.getElementById('feedbackContainer').classList.add('hidden');
-        welcomeHeader.style.display = 'block';
-        showScreen('stage');
     }
 });
