@@ -107,5 +107,138 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
-    // ... rest of the code remains the same ...
+    function startRecording() {
+        if (!('webkitSpeechRecognition' in window)) {
+            alert('Speech recognition is not supported in your browser');
+            return;
+        }
+
+        state.recognition = new webkitSpeechRecognition();
+        state.recognition.continuous = true;
+        state.recognition.interimResults = true;
+
+        state.recognition.onresult = (event) => {
+            const transcript = Array.from(event.results)
+                .map(result => result[0])
+                .map(result => result.transcript)
+                .join(' ');
+            
+            document.getElementById('transcript').textContent = transcript;
+        };
+
+        state.recognition.onerror = (event) => {
+            console.error('Speech recognition error:', event.error);
+            stopRecording();
+        };
+
+        state.recognition.onend = () => {
+            if (state.isRecording) {
+                state.recognition.start();
+            }
+        };
+
+        state.recognition.start();
+        state.isRecording = true;
+        updateRecordingUI();
+        startTimer();
+    }
+
+    function stopRecording() {
+        if (state.recognition) {
+            state.recognition.stop();
+        }
+        state.isRecording = false;
+        updateRecordingUI();
+        stopTimer();
+    }
+
+    function toggleRecording() {
+        if (state.isRecording) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    }
+
+    function updateRecordingUI() {
+        const recordBtn = document.getElementById('recordBtn');
+        const statusText = document.querySelector('.recording-status');
+        
+        if (state.isRecording) {
+            recordBtn.innerHTML = feather.icons['mic-off'].toSvg();
+            statusText.textContent = 'Click to stop recording';
+            recordBtn.classList.add('recording');
+        } else {
+            recordBtn.innerHTML = feather.icons.mic.toSvg();
+            statusText.textContent = 'Click to start recording';
+            recordBtn.classList.remove('recording');
+        }
+        feather.replace();
+    }
+
+    function startTimer() {
+        if (state.timer) clearInterval(state.timer);
+        updateTimerDisplay();
+        state.timer = setInterval(() => {
+            if (state.timeRemaining > 0) {
+                state.timeRemaining--;
+                updateTimerDisplay();
+            } else {
+                stopRecording();
+            }
+        }, 1000);
+    }
+
+    function stopTimer() {
+        if (state.timer) {
+            clearInterval(state.timer);
+            state.timer = null;
+        }
+    }
+
+    function updateTimerDisplay() {
+        const minutes = Math.floor(state.timeRemaining / 60);
+        const seconds = state.timeRemaining % 60;
+        document.getElementById('timeDisplay').textContent = 
+            `${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+
+    function generateFeedback() {
+        const transcript = document.getElementById('transcript').textContent;
+        if (!transcript) {
+            alert('Please record your pitch first!');
+            return;
+        }
+
+        const mockFeedback = [
+            "Great introduction! You clearly stated the problem your startup is solving.",
+            "Consider providing more specific details about your target market.",
+            "Your explanation of the revenue model was clear and concise.",
+            "Try to speak a bit slower when discussing technical aspects.",
+            "Good job highlighting your team's expertise and experience."
+        ];
+
+        const feedbackContainer = document.getElementById('feedbackContainer');
+        const feedbackList = document.getElementById('feedbackList');
+        feedbackList.innerHTML = mockFeedback
+            .map(feedback => `<li>${feedback}</li>`)
+            .join('');
+        feedbackContainer.classList.remove('hidden');
+    }
+
+    function resetSession() {
+        state = {
+            currentStep: 'stage',
+            selectedStage: '',
+            selectedTime: '',
+            isRecording: false,
+            timeRemaining: 0,
+            recognition: null,
+            timer: null
+        };
+        stopRecording();
+        document.getElementById('transcript').textContent = '';
+        document.getElementById('feedbackContainer').classList.add('hidden');
+        showScreen('stage');
+    }
 });

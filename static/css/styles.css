@@ -18,6 +18,12 @@
     --text-muted: #9CA3AF;
 }
 
+@keyframes rainbow-shimmer {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -167,6 +173,12 @@ input:checked + .slider:before {
 .btn:hover {
     background-color: var(--hover);
     border-color: var(--border);
+    background-image: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff);
+    background-size: 200% 200%;
+    animation: rainbow-shimmer 3s ease infinite;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
 }
 
 .btn.active {
@@ -179,11 +191,13 @@ input:checked + .slider:before {
     background-color: var(--primary);
     color: white;
     border: none;
+    text-align: center;
 }
 
 .primary-btn:hover {
     opacity: 0.9;
     color: white;
+    -webkit-text-fill-color: white;
 }
 
 .back-btn {
@@ -196,6 +210,80 @@ input:checked + .slider:before {
     font-size: 0.875rem;
     padding: 0.5rem;
     cursor: pointer;
+}
+
+.recording-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+}
+
+.timer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    font-size: 2rem;
+    font-family: monospace;
+}
+
+.record-btn {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.record-btn:hover {
+    transform: scale(1.05);
+}
+
+.record-btn.recording {
+    background-color: #DC2626;
+}
+
+.recording-status {
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.transcript-container {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: var(--background);
+}
+
+.transcript {
+    white-space: pre-wrap;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.feedback-container {
+    width: 100%;
+    margin-top: 2rem;
+}
+
+.feedback-container h3 {
+    margin-bottom: 1rem;
+}
+
+#feedbackList {
+    list-style-type: disc;
+    padding-left: 1.5rem;
 }
 
 .hidden {
