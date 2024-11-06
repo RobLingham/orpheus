@@ -51,19 +51,16 @@ def generate_question_or_objection(transcript: str, stage: str) -> dict:
     Transcript: {transcript}
     
     Generate a challenging but constructive question that an investor might ask.
-    Return your response in this exact format:
-    {{"type": "question", "content": "your question here"}}
+    Format as JSON with 'type' (either 'question' or 'objection') and 'content' fields.
     Make it specific to the pitch content."""
 
     try:
         response = openai_client.chat.completions.create(
             model="gpt-4",
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
         )
-        response_text = response.choices[0].message.content
-        # Parse the response text as JSON
-        import json
-        return json.loads(response_text)
+        return response.choices[0].message.content
     except Exception as e:
         print(f"Error generating question: {str(e)}")
         return {"type": "question", "content": "Could you elaborate more on your business model?"}
