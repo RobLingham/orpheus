@@ -189,7 +189,7 @@ input:checked + .slider:before {
 
 .primary-btn:hover {
     background-color: var(--primary-hover);
-    color: white !important;
+    color: white;
     background-image: none;
     -webkit-background-clip: initial;
     background-clip: initial;
@@ -207,4 +207,235 @@ input:checked + .slider:before {
     border: none;
     text-align: center;
     font-weight: 600;
+}
+
+.primary-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.back-btn {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    color: var(--foreground);
+    font-size: 0.875rem;
+    padding: 0.5rem;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+.back-btn:hover {
+    opacity: 1;
+}
+
+.recording-content {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2rem;
+}
+
+.timer-container {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+    margin-bottom: 1rem;
+}
+
+.timer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    font-size: 1.5rem;
+    font-family: monospace;
+}
+
+.increment-timer {
+    font-size: 1.25rem;
+    color: var(--text-muted);
+}
+
+.record-btn {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    background-color: var(--primary);
+    color: white;
+    border: none;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.record-btn:hover {
+    transform: scale(1.05);
+    background-color: var(--primary-hover);
+}
+
+.record-btn.recording {
+    background-color: var(--destructive);
+}
+
+.record-btn.recording:hover {
+    background-color: var(--destructive-hover);
+}
+
+.recording-status {
+    color: var(--text-muted);
+    text-align: center;
+}
+
+.transcript-container {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin: 1rem 0;
+    max-height: 200px;
+    overflow-y: auto;
+    background-color: var(--background);
+}
+
+.transcript {
+    white-space: pre-wrap;
+    font-size: 0.875rem;
+    line-height: 1.5;
+}
+
+.feedback-container {
+    width: 100%;
+    margin-top: 2rem;
+    padding: 1.5rem;
+    border: 1px solid var(--border);
+    border-radius: 0.75rem;
+    background-color: var(--card-bg);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.feedback-section {
+    margin-bottom: 1.5rem;
+}
+
+.feedback-section h4 {
+    color: var(--primary);
+    margin-bottom: 0.75rem;
+    font-weight: 600;
+}
+
+.feedback-section ul {
+    list-style-type: none;
+    padding-left: 1.5rem;
+}
+
+.feedback-section li {
+    position: relative;
+    margin-bottom: 0.75rem;
+    line-height: 1.6;
+}
+
+.feedback-section li::before {
+    content: "•";
+    color: var(--primary);
+    position: absolute;
+    left: -1.2rem;
+}
+
+.qa-mode-only {
+    display: none;
+}
+
+.qa-mode-only.show {
+    display: block;
+}
+
+.qa-container {
+    width: 100%;
+    margin: 1rem 0;
+}
+
+.questions-list {
+    margin-bottom: 1rem;
+}
+
+.question-item {
+    background-color: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+}
+
+.question-item h4 {
+    color: var(--primary);
+    margin-bottom: 0.5rem;
+    font-weight: 600;
+}
+
+.question-item p {
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+}
+
+.question-item .response {
+    border-left: 2px solid var(--primary);
+    padding-left: 1rem;
+    margin-top: 0.5rem;
+    color: var(--text-muted);
+}
+
+.button-group {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-top: 1rem;
+}
+
+#endSessionBtn {
+    background-color: var(--success);
+    color: white;
+    border: none;
+}
+
+#endSessionBtn:hover {
+    background-color: var(--success-hover);
+}
+
+#continuePitchBtn {
+    width: 100%;
+    margin: 1rem 0;
+}
+
+.hidden {
+    display: none !important;
+}
+
+.animate-spin {
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+@media (max-width: 640px) {
+    .grid-buttons {
+        grid-template-columns: 1fr;
+    }
+    
+    .container {
+        padding: 1rem;
+    }
 }

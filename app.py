@@ -47,20 +47,20 @@ def generate_ai_feedback(transcript: str, stage: str) -> list:
         return ["Unable to generate AI feedback at this time. Please try again later."]
 
 def generate_question_or_objection(transcript: str, stage: str) -> dict:
+    prompt = f"""Based on this {stage} pitch transcript, generate a relevant investor question or objection:
+    Transcript: {transcript}
+    
+    Generate a challenging but constructive question that an investor might ask.
+    Format as JSON with 'type' (either 'question' or 'objection') and 'content' fields.
+    Make it specific to the pitch content."""
+
     try:
         response = openai_client.chat.completions.create(
             model="gpt-4",
-            messages=[{
-                "role": "user", 
-                "content": f"Based on this {stage} pitch transcript, generate a relevant investor question or objection: {transcript}"
-            }]
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
         )
-        content = response.choices[0].message.content
-        # Parse the response into expected format
-        return {
-            "type": "question",
-            "content": content
-        }
+        return response.choices[0].message.content
     except Exception as e:
         print(f"Error generating question: {str(e)}")
         return {"type": "question", "content": "Could you elaborate more on your business model?"}
