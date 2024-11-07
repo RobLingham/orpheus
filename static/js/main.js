@@ -56,7 +56,7 @@ function showScreen(screenName) {
         const readyContent = document.querySelector('.ready-content p');
         if (readyContent) {
             const defaultText = "Take a moment, collect your thoughts, and let me know when you're ready.";
-            const qaText = "During this session you'll field questions and face objections. You'll be able to speak for 90 second increments (or until you hit the microphone button), receive questions/objections, respond to them, or continue on in your pitch.";
+            const qaText = "During this session you'll field questions and face objections. You'll be able to speak for 30 second increments (or until you hit the microphone button), receive questions/objections, respond to them, or continue on in your pitch.";
             
             readyContent.textContent = window.pitchPracticeState.selectedPitchType === 'qa' ? qaText : defaultText;
         }
@@ -111,7 +111,7 @@ function startTimer() {
     updateTimerDisplay();
     
     if (state.selectedPitchType === 'qa') {
-        state.incrementTimeRemaining = 90;
+        state.incrementTimeRemaining = 30;  // Changed from 90 to 30
         startIncrementTimer();
     }
 
@@ -474,7 +474,7 @@ async function generateQuestion() {
 
 function continuePitch() {
     const state = window.pitchPracticeState;
-    state.incrementTimeRemaining = 90;
+    state.incrementTimeRemaining = 30;  // Changed from 90 to 30
     startRecording();
 }
 
@@ -508,17 +508,6 @@ document.addEventListener('DOMContentLoaded', function() {
         startBtn.addEventListener('click', handleStart);
     }
 
-    const recordBtn = document.getElementById('recordBtn');
-    if (recordBtn) {
-        recordBtn.addEventListener('click', () => {
-            if (window.pitchPracticeState.isRecording) {
-                stopRecording();
-            } else {
-                startRecording();
-            }
-        });
-    }
-
     document.getElementById('resetBtn').addEventListener('click', () => {
         document.getElementById('resetModal').classList.remove('hidden');
     });
@@ -530,27 +519,6 @@ document.addEventListener('DOMContentLoaded', function() {
     document.getElementById('confirmResetBtn').addEventListener('click', () => {
         document.getElementById('resetModal').classList.add('hidden');
         resetSession();
-    });
-
-    document.getElementById('saveAndContinueBtn').addEventListener('click', async () => {
-        const btn = document.getElementById('saveAndContinueBtn');
-        btn.disabled = true;
-        btn.innerHTML = '<i data-feather="loader" class="animate-spin"></i> Saving...';
-        if (typeof feather !== 'undefined') {
-            feather.replace();
-        }
-        
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        confetti({
-            particleCount: 100,
-            spread: 70,
-            origin: { y: 0.6 }
-        });
-        
-        setTimeout(() => {
-            resetSession();
-        }, 1000);
     });
 
     document.querySelectorAll('.back-btn').forEach(button => {
