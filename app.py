@@ -38,32 +38,37 @@ def generate_ai_feedback(transcript: str, stage: str) -> list:
 
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4",  # Changed from gpt-4o-mini to gpt-4
+            model="gpt-4",
             messages=[{"role": "user", "content": prompt}]
         )
         feedback_text = response.choices[0].message.content
-        # Split feedback into sections
-        feedback_sections = feedback_text.split('\n\n')
-        return [section.strip() for section in feedback_sections if section.strip()]
+        # Split feedback into sections and filter empty sections
+        feedback_sections = [section.strip() for section in feedback_text.split('\n\n') if section.strip()]
+        
+        if not feedback_sections:
+            return ["Unable to generate feedback. Please try again."]
+            
+        return feedback_sections
     except Exception as e:
         print(f"Error generating feedback: {str(e)}")
         return ["Unable to generate AI feedback at this time. Please try again later."]
 
 def generate_question_or_objection(transcript: str, stage: str) -> dict:
-    prompt = f"""Based on this {stage} pitch transcript, generate a relevant investor question or objection:
+    prompt = f'''Based on this {stage} pitch transcript, generate a relevant investor question or objection:
     Transcript: {transcript}
     
     Generate a challenging but constructive question that an investor might ask.
-    Format as JSON with 'type' (either 'question' or 'objection') and 'content' fields.
-    Make it specific to the pitch content."""
+    Format your response as: {{"type": "question", "content": "Your question here"}} or {{"type": "objection", "content": "Your objection here"}}
+    Make it specific to the pitch content.'''
 
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4",  # Changed from gpt-4o to gpt-4
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+            model="gpt-4",
+            messages=[{"role": "user", "content": prompt}]
         )
-        return json.loads(response.choices[0].message.content)
+        # Parse the response text as JSON
+        response_text = response.choices[0].message.content.strip()
+        return json.loads(response_text)
     except Exception as e:
         print(f"Error generating question: {str(e)}")
         return {"type": "question", "content": "Could you elaborate more on your business model?"}
@@ -76,11 +81,16 @@ def index():
 def save_transcript():
     try:
         data = request.get_json()
-        if not data or 'stage' not in data or 'duration' not in data or 'transcript' not in data:
+        if not data:
+            print("No JSON data received in save_transcript")
+            return jsonify({'success': False, 'message': 'No data received'}), 400
+            
+        if 'stage' not in data or 'duration' not in data or 'transcript' not in data:
             print("Missing required fields in save_transcript")
             return jsonify({'success': False, 'message': 'Missing required fields'}), 400
         
         if not data['transcript'].strip():
+            print("Empty transcript in save_transcript")
             return jsonify({'success': True, 'message': 'No transcript to save'}), 200
 
         new_pitch = Pitch(
@@ -101,43 +111,57 @@ def save_transcript():
 def get_feedback():
     try:
         data = request.get_json()
-        if not data or 'transcript' not in data or 'stage' not in data:
+        if not data:
+            print("No JSON data received in generate_feedback")
+            return jsonify({'success': False, 'message': 'No data received'}), 400
+            
+        if 'transcript' not in data or 'stage' not in data:
             print("Missing transcript or stage in generate_feedback")
             return jsonify({'success': False, 'message': 'Missing transcript or stage'}), 400
         
         transcript = data.get('transcript')
         stage = data.get('stage')
         
-        if not transcript.strip():
+        if not transcript or not transcript.strip():
             print("Empty transcript in generate_feedback")
             return jsonify({'success': False, 'message': 'Empty transcript'}), 400
         
         feedback = generate_ai_feedback(transcript, stage)
+        if not feedback:
+            return jsonify({'success': False, 'message': 'Failed to generate feedback'}), 500
+            
         return jsonify({'success': True, 'feedback': feedback})
     except Exception as e:
-        print(f"Error generating feedback: {str(e)}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        print(f"Error in generate_feedback route: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while generating feedback'}), 500
 
 @app.route('/api/generate-question', methods=['POST'])
 def generate_question():
     try:
         data = request.get_json()
-        if not data or 'transcript' not in data or 'stage' not in data:
+        if not data:
+            print("No JSON data received in generate_question")
+            return jsonify({'success': False, 'message': 'No data received'}), 400
+            
+        if 'transcript' not in data or 'stage' not in data:
             print("Missing transcript or stage in generate_question")
             return jsonify({'success': False, 'message': 'Missing transcript or stage'}), 400
         
         transcript = data.get('transcript')
         stage = data.get('stage')
         
-        if not transcript.strip():
+        if not transcript or not transcript.strip():
             print("Empty transcript in generate_question")
             return jsonify({'success': False, 'message': 'Empty transcript'}), 400
         
         question = generate_question_or_objection(transcript, stage)
+        if not question:
+            return jsonify({'success': False, 'message': 'Failed to generate question'}), 500
+            
         return jsonify({'success': True, 'response': question})
     except Exception as e:
-        print(f"Error generating question: {str(e)}")
-        return jsonify({'success': False, 'message': str(e)}), 500
+        print(f"Error in generate_question route: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while generating question'}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
