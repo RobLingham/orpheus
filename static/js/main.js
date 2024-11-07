@@ -1,10 +1,5 @@
 // Initialize global state and Speech Recognition
 let recognition = null;
-if ('webkitSpeechRecognition' in window) {
-    recognition = new webkitSpeechRecognition();
-    recognition.continuous = true;
-    recognition.interimResults = true;
-}
 
 // Initialize state object
 window.pitchPracticeState = {
@@ -111,7 +106,7 @@ function startTimer() {
     updateTimerDisplay();
     
     if (state.selectedPitchType === 'qa') {
-        state.incrementTimeRemaining = 30;  // Changed from 90 to 30
+        state.incrementTimeRemaining = 30;
         startIncrementTimer();
     }
 
@@ -161,8 +156,14 @@ function stopTimer() {
 
 function initializeSpeechRecognition() {
     if (!recognition) {
-        alert('Speech recognition is not supported in your browser');
-        return;
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+        } else {
+            alert('Speech recognition is not supported in your browser');
+            return;
+        }
     }
 
     recognition.onresult = (event) => {
@@ -177,33 +178,10 @@ function initializeSpeechRecognition() {
         }
     };
 
-    recognition.onerror = (event) => {
-        console.error('Speech recognition error:', event.error);
-        if (event.error === 'no-speech') {
-            const statusText = document.querySelector('.recording-status');
-            if (statusText) {
-                statusText.textContent = 'No speech detected. Click to try again.';
-            }
-        }
-        stopRecording();
-    };
-
-    recognition.onend = () => {
-        if (window.pitchPracticeState.isRecording) {
-            try {
-                recognition.start();
-            } catch (error) {
-                console.error('Error restarting recognition:', error);
-                stopRecording();
-            }
-        }
-    };
-
     try {
         recognition.start();
     } catch (error) {
         console.error('Error starting recognition:', error);
-        alert('Failed to start speech recognition. Please try again.');
         stopRecording();
     }
 }
@@ -219,10 +197,14 @@ function stopRecording() {
     window.pitchPracticeState.isRecording = false;
     updateRecordingUI();
     stopTimer();
+    
     if (recognition) {
-        recognition.stop();
+        try {
+            recognition.stop();
+        } catch (error) {
+            console.error('Error stopping recognition:', error);
+        }
     }
-    saveTranscript();
 }
 
 function handleStart() {
@@ -299,10 +281,12 @@ function resetSession() {
 
 async function saveTranscript() {
     const state = window.pitchPracticeState;
-    const transcript = document.getElementById('transcript')?.textContent;
+    const transcriptElement = document.getElementById('transcript');
+    const transcript = transcriptElement?.textContent || '';
     
-    if (!transcript) {
-        return false;
+    if (!transcript.trim()) {
+        console.log('No transcript to save');
+        return true; // Return true as this isn't an error case
     }
 
     try {
@@ -313,16 +297,21 @@ async function saveTranscript() {
             },
             body: JSON.stringify({
                 stage: state.selectedStage,
-                duration: state.selectedTime * 60,
+                duration: parseInt(state.selectedTime) * 60,
                 transcript: transcript
             })
         });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const data = await response.json();
         return data.success;
     } catch (error) {
         console.error('Error saving transcript:', error);
-        return false;
+        // Don't block the flow for transcript saving errors
+        return true;
     }
 }
 
@@ -348,11 +337,6 @@ async function generateFeedback() {
     }
 
     try {
-        const savedSuccessfully = await saveTranscript();
-        if (!savedSuccessfully) {
-            throw new Error('Failed to save transcript');
-        }
-
         const response = await fetch('/api/generate-feedback', {
             method: 'POST',
             headers: {
@@ -363,6 +347,10 @@ async function generateFeedback() {
                 stage: window.pitchPracticeState.selectedStage
             })
         });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
 
         const data = await response.json();
         
@@ -434,24 +422,17 @@ async function generateQuestion() {
             })
         });
 
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
         const data = await response.json();
         if (data.success && data.response) {
-            let question;
-            try {
-                question = typeof data.response === 'string' ? JSON.parse(data.response) : data.response;
-            } catch (parseError) {
-                console.error('Error parsing question response:', parseError);
-                question = {
-                    type: 'question',
-                    content: 'Could you elaborate more on your pitch?'
-                };
-            }
-
             const questionElement = document.createElement('div');
             questionElement.className = 'question-item';
             questionElement.innerHTML = `
-                <h4>${question.type === 'question' ? 'Question' : 'Objection'}</h4>
-                <p>${question.content}</p>
+                <h4>${data.response.type === 'question' ? 'Question' : 'Objection'}</h4>
+                <p>${data.response.content}</p>
                 <div class="response" id="response-${Date.now()}"></div>
             `;
             questionsList.appendChild(questionElement);
@@ -474,11 +455,19 @@ async function generateQuestion() {
 
 function continuePitch() {
     const state = window.pitchPracticeState;
-    state.incrementTimeRemaining = 30;  // Changed from 90 to 30
+    state.incrementTimeRemaining = 30;
     startRecording();
 }
 
 document.addEventListener('DOMContentLoaded', function() {
+    document.getElementById('recordBtn').addEventListener('click', function() {
+        if (window.pitchPracticeState.isRecording) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    });
+
     document.querySelectorAll('.stage-btn').forEach(button => {
         button.addEventListener('click', () => {
             window.pitchPracticeState.selectedStage = button.dataset.value;
@@ -535,15 +524,37 @@ document.addEventListener('DOMContentLoaded', function() {
         continuePitchBtn.addEventListener('click', continuePitch);
     }
 
+    document.getElementById('saveAndContinueBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('saveAndContinueBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i data-feather="loader" class="animate-spin"></i> Saving...';
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+        
+        setTimeout(() => {
+            resetSession();
+        }, 1000);
+    });
+
     const themeToggle = document.getElementById('themeToggle');
     if (themeToggle) {
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
-        themeToggle.checked = prefersDark;
-
-        themeToggle.addEventListener('change', () => {
-            const theme = themeToggle.checked ? 'dark' : 'light';
-            document.documentElement.setAttribute('data-theme', theme);
+        const savedTheme = localStorage.getItem('theme') || 'light';
+        document.body.setAttribute('data-theme', savedTheme);
+        themeToggle.checked = savedTheme === 'dark';
+        
+        themeToggle.addEventListener('change', function() {
+            const newTheme = this.checked ? 'dark' : 'light';
+            document.body.setAttribute('data-theme', newTheme);
+            localStorage.setItem('theme', newTheme);
         });
     }
 

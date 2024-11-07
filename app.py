@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
 from openai import OpenAI
+import json
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pitches.db'
@@ -37,7 +38,7 @@ def generate_ai_feedback(transcript: str, stage: str) -> list:
 
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=[{"role": "user", "content": prompt}]
         )
         feedback_text = response.choices[0].message.content
@@ -58,7 +59,7 @@ def generate_question_or_objection(transcript: str, stage: str) -> dict:
 
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4",
+            model="gpt-4o",
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"}
         )
