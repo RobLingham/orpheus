@@ -38,7 +38,7 @@ def generate_ai_feedback(transcript: str, stage: str) -> list:
 
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4",  # Changed from gpt-4o-mini to gpt-4
             messages=[{"role": "user", "content": prompt}]
         )
         feedback_text = response.choices[0].message.content
@@ -59,7 +59,7 @@ def generate_question_or_objection(transcript: str, stage: str) -> dict:
 
     try:
         response = openai_client.chat.completions.create(
-            model="gpt-4o",
+            model="gpt-4",  # Changed from gpt-4o to gpt-4
             messages=[{"role": "user", "content": prompt}],
             response_format={"type": "json_object"}
         )
@@ -77,8 +77,12 @@ def save_transcript():
     try:
         data = request.get_json()
         if not data or 'stage' not in data or 'duration' not in data or 'transcript' not in data:
+            print("Missing required fields in save_transcript")
             return jsonify({'success': False, 'message': 'Missing required fields'}), 400
         
+        if not data['transcript'].strip():
+            return jsonify({'success': True, 'message': 'No transcript to save'}), 200
+
         new_pitch = Pitch(
             stage=data['stage'],
             duration=data['duration'],
@@ -86,49 +90,54 @@ def save_transcript():
         )
         db.session.add(new_pitch)
         db.session.commit()
+        print("Transcript saved successfully")
         return jsonify({'success': True, 'message': 'Transcript saved successfully'})
     except Exception as e:
         db.session.rollback()
         print(f"Error saving transcript: {str(e)}")
-        return jsonify({'success': False, 'message': 'Failed to save transcript'}), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/generate-feedback', methods=['POST'])
 def get_feedback():
     try:
         data = request.get_json()
         if not data or 'transcript' not in data or 'stage' not in data:
+            print("Missing transcript or stage in generate_feedback")
             return jsonify({'success': False, 'message': 'Missing transcript or stage'}), 400
         
         transcript = data.get('transcript')
         stage = data.get('stage')
         
         if not transcript.strip():
+            print("Empty transcript in generate_feedback")
             return jsonify({'success': False, 'message': 'Empty transcript'}), 400
         
         feedback = generate_ai_feedback(transcript, stage)
         return jsonify({'success': True, 'feedback': feedback})
     except Exception as e:
         print(f"Error generating feedback: {str(e)}")
-        return jsonify({'success': False, 'message': 'Failed to generate feedback'}), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 @app.route('/api/generate-question', methods=['POST'])
 def generate_question():
     try:
         data = request.get_json()
         if not data or 'transcript' not in data or 'stage' not in data:
+            print("Missing transcript or stage in generate_question")
             return jsonify({'success': False, 'message': 'Missing transcript or stage'}), 400
         
         transcript = data.get('transcript')
         stage = data.get('stage')
         
         if not transcript.strip():
+            print("Empty transcript in generate_question")
             return jsonify({'success': False, 'message': 'Empty transcript'}), 400
         
         question = generate_question_or_objection(transcript, stage)
         return jsonify({'success': True, 'response': question})
     except Exception as e:
         print(f"Error generating question: {str(e)}")
-        return jsonify({'success': False, 'message': 'Failed to generate question'}), 500
+        return jsonify({'success': False, 'message': str(e)}), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
