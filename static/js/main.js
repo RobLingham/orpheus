@@ -20,7 +20,6 @@ window.pitchPracticeState = {
     incrementTimer: null
 };
 
-// Utility Functions
 function formatTime(seconds) {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
@@ -28,7 +27,6 @@ function formatTime(seconds) {
 }
 
 function showScreen(screenName) {
-    // Reset all button highlights first
     document.querySelectorAll('.btn').forEach(btn => {
         btn.classList.remove('active');
     });
@@ -42,13 +40,11 @@ function showScreen(screenName) {
         }
     });
     
-    // Show/hide header based on screen
     const cardHeader = document.querySelector('.card-header');
     if (cardHeader) {
         cardHeader.style.display = screenName === 'stage' ? 'block' : 'none';
     }
 
-    // Reset button visibility when entering recording screen
     if (screenName === 'recording') {
         const feedbackBtn = document.getElementById('feedbackBtn');
         const endSessionBtn = document.getElementById('endSessionBtn');
@@ -56,7 +52,6 @@ function showScreen(screenName) {
         if (endSessionBtn) endSessionBtn.style.display = 'none';
     }
 
-    // Update ready screen content for pitch type
     if (screenName === 'ready') {
         const readyContent = document.querySelector('.ready-content p');
         if (readyContent) {
@@ -67,7 +62,6 @@ function showScreen(screenName) {
         }
     }
 
-    // Show/hide Q&A mode elements
     const qaElements = document.querySelectorAll('.qa-mode-only');
     qaElements.forEach(element => {
         element.classList.toggle('show', window.pitchPracticeState.selectedPitchType === 'qa');
@@ -82,7 +76,6 @@ function updateTimerDisplay() {
     if (timeDisplay) {
         timeDisplay.textContent = formatTime(state.timeRemaining);
     }
-    // Set initial time display when entering recording screen
     if (state.currentStep === 'recording' && !state.isRecording) {
         timeDisplay.textContent = formatTime(state.selectedTime * 60);
     }
@@ -117,7 +110,6 @@ function startTimer() {
 
     updateTimerDisplay();
     
-    // Set increment time for Q&A mode
     if (state.selectedPitchType === 'qa') {
         state.incrementTimeRemaining = 90;
         startIncrementTimer();
@@ -400,7 +392,6 @@ async function generateFeedback() {
                 });
             feedbackContainer.classList.remove('hidden');
 
-            // Show end session button and hide generate feedback button
             const endSessionBtn = document.getElementById('endSessionBtn');
             if (feedbackBtn && endSessionBtn) {
                 feedbackBtn.style.display = 'none';
@@ -488,58 +479,46 @@ function continuePitch() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Theme toggle
-    const themeToggle = document.getElementById('themeToggle');
-    if (themeToggle) {
-        const savedTheme = localStorage.getItem('theme') || 'light';
-        document.body.setAttribute('data-theme', savedTheme);
-        themeToggle.checked = savedTheme === 'dark';
-        
-        themeToggle.addEventListener('change', function() {
-            const newTheme = this.checked ? 'dark' : 'light';
-            document.body.setAttribute('data-theme', newTheme);
-            localStorage.setItem('theme', newTheme);
-        });
-    }
-    
-    // Stage buttons
     document.querySelectorAll('.stage-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            document.querySelectorAll('.stage-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            window.pitchPracticeState.selectedStage = this.dataset.value;
+        button.addEventListener('click', () => {
+            window.pitchPracticeState.selectedStage = button.dataset.value;
+            button.classList.add('active');
             showScreen('time');
         });
     });
 
-    // Time buttons
     document.querySelectorAll('.time-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            document.querySelectorAll('.time-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            window.pitchPracticeState.selectedTime = this.dataset.value;
-            window.pitchPracticeState.timeRemaining = parseInt(this.dataset.value) * 60;
+        button.addEventListener('click', () => {
+            window.pitchPracticeState.selectedTime = button.dataset.value;
+            button.classList.add('active');
             showScreen('pitchType');
         });
     });
 
-    // Pitch type buttons
     document.querySelectorAll('.pitch-type-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            document.querySelectorAll('.pitch-type-btn').forEach(b => b.classList.remove('active'));
-            this.classList.add('active');
-            window.pitchPracticeState.selectedPitchType = this.dataset.value;
+        button.addEventListener('click', () => {
+            window.pitchPracticeState.selectedPitchType = button.dataset.value;
+            button.classList.add('active');
             showScreen('ready');
         });
     });
 
-    // Start button
     const startBtn = document.getElementById('startBtn');
     if (startBtn) {
         startBtn.addEventListener('click', handleStart);
     }
 
-    // Reset button
+    const recordBtn = document.getElementById('recordBtn');
+    if (recordBtn) {
+        recordBtn.addEventListener('click', () => {
+            if (window.pitchPracticeState.isRecording) {
+                stopRecording();
+            } else {
+                startRecording();
+            }
+        });
+    }
+
     document.getElementById('resetBtn').addEventListener('click', () => {
         document.getElementById('resetModal').classList.remove('hidden');
     });
@@ -553,45 +532,6 @@ document.addEventListener('DOMContentLoaded', function() {
         resetSession();
     });
 
-    // Back buttons
-    document.querySelectorAll('.back-btn').forEach(button => {
-        button.addEventListener('click', goBack);
-    });
-
-    // Record button
-    const recordBtn = document.getElementById('recordBtn');
-    if (recordBtn) {
-        recordBtn.addEventListener('click', function() {
-            if (window.pitchPracticeState.isRecording) {
-                stopRecording();
-            } else {
-                startRecording();
-            }
-        });
-    }
-
-    // Continue Pitch Button
-    const continuePitchBtn = document.getElementById('continuePitchBtn');
-    if (continuePitchBtn) {
-        continuePitchBtn.addEventListener('click', continuePitch);
-    }
-
-    // End Session Button
-    const endSessionBtn = document.getElementById('endSessionBtn');
-    if (endSessionBtn) {
-        endSessionBtn.addEventListener('click', () => {
-            stopRecording();
-            generateFeedback();
-        });
-    }
-
-    // Feedback Button
-    const feedbackBtn = document.getElementById('feedbackBtn');
-    if (feedbackBtn) {
-        feedbackBtn.addEventListener('click', generateFeedback);
-    }
-
-    // Save and Continue Button
     document.getElementById('saveAndContinueBtn').addEventListener('click', async () => {
         const btn = document.getElementById('saveAndContinueBtn');
         btn.disabled = true;
@@ -602,10 +542,43 @@ document.addEventListener('DOMContentLoaded', function() {
         
         await new Promise(resolve => setTimeout(resolve, 1000));
         
-        resetSession();
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+        
+        setTimeout(() => {
+            resetSession();
+        }, 1000);
     });
 
-    // Initialize feather icons
+    document.querySelectorAll('.back-btn').forEach(button => {
+        button.addEventListener('click', goBack);
+    });
+
+    const feedbackBtn = document.getElementById('feedbackBtn');
+    if (feedbackBtn) {
+        feedbackBtn.addEventListener('click', generateFeedback);
+    }
+
+    const continuePitchBtn = document.getElementById('continuePitchBtn');
+    if (continuePitchBtn) {
+        continuePitchBtn.addEventListener('click', continuePitch);
+    }
+
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        document.documentElement.setAttribute('data-theme', prefersDark ? 'dark' : 'light');
+        themeToggle.checked = prefersDark;
+
+        themeToggle.addEventListener('change', () => {
+            const theme = themeToggle.checked ? 'dark' : 'light';
+            document.documentElement.setAttribute('data-theme', theme);
+        });
+    }
+
     if (typeof feather !== 'undefined') {
         feather.replace();
     }
