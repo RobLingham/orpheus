@@ -388,7 +388,7 @@ async function generateFeedback() {
                 }
             }
         } else {
-            throw new Error(data.message || 'Failed to generate feedback');
+            throw new Error(data.error || 'Failed to generate feedback');
         }
     } catch (error) {
         console.error('Error generating feedback:', error);

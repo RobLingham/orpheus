@@ -139,35 +139,39 @@ def generate_question_or_objection(transcript: str, stage: str) -> dict:
     else:
         return {"type": "objection", "content": random.choice(ANGEL_INVESTOR_OBJECTIONS)}
 
-def generate_ai_feedback(transcript: str, stage: str) -> list:
-    prompt = f'''Analyze this {stage} pitch and provide actionable feedback:
-    Transcript: {transcript}
+def generate_ai_feedback(transcript: str, stage: str) -> dict:
+    prompt = f'''Analyze this {stage} pitch and provide actionable feedback. 
+    Return your analysis in this exact JSON format:
+    {{
+        "opening_and_hook": "detailed feedback about the opening",
+        "value_proposition": "detailed feedback about the value proposition",
+        "market_understanding": "detailed feedback about market understanding",
+        "delivery_and_communication": "detailed feedback about delivery",
+        "areas_for_improvement": ["point 1", "point 2", "point 3"]
+    }}
     
-    Please provide feedback in these categories:
-    1. Opening and Hook
-    2. Value Proposition
-    3. Market Understanding
-    4. Delivery and Communication
-    5. Areas for Improvement
-    
-    Format each section with a number and title, followed by detailed feedback.'''
+    Transcript: {transcript}'''
 
     try:
         response = openai_client.chat.completions.create(
             model="gpt-4",
-            messages=[{"role": "user", "content": prompt}]
+            messages=[{
+                "role": "user", 
+                "content": prompt
+            }]
         )
-        feedback_text = response.choices[0].message.content
-        # Split feedback into sections and filter empty sections
-        feedback_sections = [section.strip() for section in feedback_text.split('\n\n') if section.strip()]
         
-        if not feedback_sections:
-            return ["Unable to generate feedback. Please try again."]
-            
-        return feedback_sections
+        feedback_json = json.loads(response.choices[0].message.content)
+        return {
+            "success": True,
+            "feedback": feedback_json
+        }
     except Exception as e:
         print(f"Error generating feedback: {str(e)}")
-        return ["Unable to generate AI feedback at this time. Please try again later."]
+        return {
+            "success": False,
+            "error": "Unable to generate AI feedback at this time."
+        }
 
 @app.route('/')
 def index():
