@@ -158,13 +158,37 @@ def generate_ai_feedback(transcript: str, stage: str) -> dict:
             messages=[{
                 "role": "user", 
                 "content": prompt
-            }]
+            }],
+            temperature=0.7,
+            max_tokens=1000
         )
         
-        feedback_json = json.loads(response.choices[0].message.content)
+        feedback_json = json.loads(response.choices[0].message.content.strip())
+        
+        # Validate the response structure
+        required_keys = [
+            "opening_and_hook",
+            "value_proposition",
+            "market_understanding",
+            "delivery_and_communication",
+            "areas_for_improvement"
+        ]
+        
+        if not all(key in feedback_json for key in required_keys):
+            raise ValueError("Invalid feedback format")
+            
+        if not isinstance(feedback_json["areas_for_improvement"], list):
+            raise ValueError("areas_for_improvement must be a list")
+            
         return {
             "success": True,
             "feedback": feedback_json
+        }
+    except json.JSONDecodeError as e:
+        print(f"JSON parsing error: {str(e)}")
+        return {
+            "success": False,
+            "error": "Failed to parse feedback response"
         }
     except Exception as e:
         print(f"Error generating feedback: {str(e)}")

@@ -354,32 +354,33 @@ async function generateFeedback() {
 
         const data = await response.json();
         
-        if (data.success && Array.isArray(data.feedback)) {
-            feedbackList.innerHTML = '';
-            data.feedback
-                .filter(item => item && item.trim())
-                .forEach(feedback => {
-                    const section = document.createElement('div');
-                    section.className = 'feedback-section';
-                    
-                    const titleMatch = feedback.match(/^\d+\.\s+([^:]+):/);
-                    if (titleMatch) {
-                        const [fullMatch, title] = titleMatch;
-                        const content = feedback.replace(fullMatch, '').trim();
-                        
-                        section.innerHTML = `
-                            <h4>${title}</h4>
-                            <ul>
-                                <li>${content}</li>
-                            </ul>
-                        `;
-                    } else {
-                        section.innerHTML = `<ul><li>${feedback}</li></ul>`;
-                    }
-                    feedbackList.appendChild(section);
-                });
+        if (data.success && data.feedback) {
+            feedbackList.innerHTML = `
+                <div class="feedback-section">
+                    <h4>Opening and Hook</h4>
+                    <p>${data.feedback.opening_and_hook}</p>
+                </div>
+                <div class="feedback-section">
+                    <h4>Value Proposition</h4>
+                    <p>${data.feedback.value_proposition}</p>
+                </div>
+                <div class="feedback-section">
+                    <h4>Market Understanding</h4>
+                    <p>${data.feedback.market_understanding}</p>
+                </div>
+                <div class="feedback-section">
+                    <h4>Delivery and Communication</h4>
+                    <p>${data.feedback.delivery_and_communication}</p>
+                </div>
+                <div class="feedback-section">
+                    <h4>Areas for Improvement</h4>
+                    <ul>
+                        ${data.feedback.areas_for_improvement.map(item => `<li>${item}</li>`).join('')}
+                    </ul>
+                </div>
+            `;
             feedbackContainer.classList.remove('hidden');
-
+            
             const endSessionBtn = document.getElementById('endSessionBtn');
             if (feedbackBtn && endSessionBtn) {
                 feedbackBtn.style.display = 'none';
