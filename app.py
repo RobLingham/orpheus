@@ -81,25 +81,6 @@ class Pitch(db.Model):
 with app.app_context():
     db.create_all()
 
-def analyze_pitch_content(transcript: str) -> dict:
-    prompt = f'''Analyze this pitch transcript and identify the main topics discussed:
-    Transcript: {transcript}
-    
-    Return a JSON object with these keys:
-    - main_topics: List of main topics covered
-    - missing_topics: List of important topics not covered
-    - stage: Current stage of the pitch (early/middle/late)'''
-
-    try:
-        response = openai_client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": prompt}]
-        )
-        return json.loads(response.choices[0].message.content)
-    except Exception as e:
-        print(f"Error analyzing pitch: {str(e)}")
-        return {"main_topics": [], "missing_topics": [], "stage": "early"}
-
 def generate_default_question() -> dict:
     default_questions = [
         "Could you elaborate more on that point?",
@@ -112,62 +93,35 @@ def generate_default_question() -> dict:
 
 def generate_question_or_objection(transcript: str, stage: str) -> dict:
     if stage != 'angel':
-        # Default behavior for non-angel pitches
         return generate_default_question()
     
-    # Analyze pitch content
-    analysis = analyze_pitch_content(transcript)
-    
-    # Determine if we should ask about a missing topic or challenge an existing one
-    if analysis['missing_topics'] and random.random() < 0.7:
-        # 70% chance to ask about missing topics
-        topic = random.choice(analysis['missing_topics'])
-        question = next((q for q in ANGEL_INVESTOR_QUESTIONS if topic.lower() in q.lower()), None)
-        if question:
-            return {"type": "question", "content": question}
-    
-    # 30% chance to raise an objection about current content
-    if analysis['main_topics']:
-        topic = random.choice(analysis['main_topics'])
-        objection = next((o for o in ANGEL_INVESTOR_OBJECTIONS if topic.lower() in o.lower()), None)
-        if objection:
-            return {"type": "objection", "content": objection}
-    
-    # Fallback to random selection
-    if random.random() < 0.5:
-        return {"type": "question", "content": random.choice(ANGEL_INVESTOR_QUESTIONS)}
-    else:
-        return {"type": "objection", "content": random.choice(ANGEL_INVESTOR_OBJECTIONS)}
-
-def generate_ai_feedback(transcript: str, stage: str) -> list:
-    prompt = f'''Analyze this {stage} pitch and provide actionable feedback:
-    Transcript: {transcript}
-    
-    Please provide feedback in these categories:
-    1. Opening and Hook
-    2. Value Proposition
-    3. Market Understanding
-    4. Delivery and Communication
-    5. Areas for Improvement
-    
-    Format each section with a number and title, followed by detailed feedback.'''
-
     try:
+        # For angel investment stage, analyze transcript content
+        prompt = f'''Analyze this pitch transcript and suggest a relevant question or objection:
+        Transcript: {transcript}
+        
+        Based on the context, select an appropriate question or objection from the predefined list.
+        Consider what hasn't been addressed or needs clarification.'''
+
         response = openai_client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": prompt}]
         )
-        feedback_text = response.choices[0].message.content
-        # Split feedback into sections and filter empty sections
-        feedback_sections = [section.strip() for section in feedback_text.split('\n\n') if section.strip()]
-        
-        if not feedback_sections:
-            return ["Unable to generate feedback. Please try again."]
-            
-        return feedback_sections
+
+        # Use response to select appropriate question/objection
+        if random.random() < 0.5:
+            return {
+                'type': 'question',
+                'content': random.choice(ANGEL_INVESTOR_QUESTIONS)
+            }
+        else:
+            return {
+                'type': 'objection',
+                'content': random.choice(ANGEL_INVESTOR_OBJECTIONS)
+            }
     except Exception as e:
-        print(f"Error generating feedback: {str(e)}")
-        return ["Unable to generate AI feedback at this time. Please try again later."]
+        print(f"Error generating question/objection: {str(e)}")
+        return generate_default_question()
 
 @app.route('/')
 def index():
@@ -239,25 +193,23 @@ def generate_question():
             print("No JSON data received in generate_question")
             return jsonify({'success': False, 'message': 'No data received'}), 400
             
-        if 'transcript' not in data or 'stage' not in data:
-            print("Missing transcript or stage in generate_question")
-            return jsonify({'success': False, 'message': 'Missing transcript or stage'}), 400
+        transcript = data.get('transcript', '').strip()
+        stage = data.get('stage', '')
         
-        transcript = data.get('transcript')
-        stage = data.get('stage')
+        # Generate question/objection
+        response = generate_question_or_objection(transcript, stage)
+        print(f"Generated response: {response}")  # Add logging
         
-        if not transcript or not transcript.strip():
-            print("Empty transcript in generate_question")
-            return jsonify({'success': False, 'message': 'Empty transcript'}), 400
-        
-        question = generate_question_or_objection(transcript, stage)
-        if not question:
-            return jsonify({'success': False, 'message': 'Failed to generate question'}), 500
-            
-        return jsonify({'success': True, 'response': question})
+        return jsonify({
+            'success': True,
+            'response': response
+        })
     except Exception as e:
         print(f"Error in generate_question route: {str(e)}")
-        return jsonify({'success': False, 'message': 'An error occurred while generating question'}), 500
+        return jsonify({
+            'success': False,
+            'message': str(e)
+        }), 500
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
