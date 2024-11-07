@@ -104,15 +104,25 @@
                     <div id="feedbackContainer" class="feedback-container hidden">
                         <h3>Feedback:</h3>
                         <ul id="feedbackList"></ul>
-                    </div>
-                    <div class="button-group">
-                        <button class="btn" id="endSessionBtn" style="display: none;">
-                            <i data-feather="check-circle"></i> End Session
-                        </button>
+                        <div class="button-group feedback-actions">
+                            <button class="btn" id="resetBtn">Reset</button>
+                            <button class="btn primary-btn" id="saveAndContinueBtn">Save & Continue</button>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
+    </div>
+
+    <div id="resetModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Reset Session</h3>
+            <p>Are you sure you want to reset? You'll lose all your work from this session.</p>
+            <div class="button-group">
+                <button class="btn" id="cancelResetBtn">Cancel</button>
+                <button class="btn primary-btn" id="confirmResetBtn">Reset</button>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>

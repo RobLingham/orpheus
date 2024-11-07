@@ -348,6 +348,13 @@ input:checked + .slider:before {
     left: -1.2rem;
 }
 
+.feedback-actions {
+    margin-top: 2rem;
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
 .qa-mode-only {
     display: none;
 }
@@ -411,6 +418,39 @@ input:checked + .slider:before {
 #continuePitchBtn {
     width: 100%;
     margin: 1rem 0;
+}
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+}
+
+.modal-content {
+    background-color: var(--card-bg);
+    padding: 2rem;
+    border-radius: 0.75rem;
+    max-width: 400px;
+    width: 90%;
+}
+
+.modal-content h3 {
+    margin-bottom: 1rem;
+}
+
+.modal-content p {
+    margin-bottom: 1.5rem;
+}
+
+.modal.hidden {
+    display: none;
 }
 
 .hidden {

@@ -540,10 +540,18 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Reset button
-    const resetBtn = document.getElementById('resetBtn');
-    if (resetBtn) {
-        resetBtn.addEventListener('click', handleReset);
-    }
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        document.getElementById('resetModal').classList.remove('hidden');
+    });
+
+    document.getElementById('cancelResetBtn').addEventListener('click', () => {
+        document.getElementById('resetModal').classList.add('hidden');
+    });
+
+    document.getElementById('confirmResetBtn').addEventListener('click', () => {
+        document.getElementById('resetModal').classList.add('hidden');
+        resetSession();
+    });
 
     // Back buttons
     document.querySelectorAll('.back-btn').forEach(button => {
@@ -582,6 +590,20 @@ document.addEventListener('DOMContentLoaded', function() {
     if (feedbackBtn) {
         feedbackBtn.addEventListener('click', generateFeedback);
     }
+
+    // Save and Continue Button
+    document.getElementById('saveAndContinueBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('saveAndContinueBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i data-feather="loader" class="animate-spin"></i> Saving...';
+        if (typeof feather !== 'undefined') {
+            feather.replace();
+        }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        resetSession();
+    });
 
     // Initialize feather icons
     if (typeof feather !== 'undefined') {
