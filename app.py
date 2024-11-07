@@ -3,7 +3,6 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 import os
 from openai import OpenAI
-import json
 
 app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pitches.db'
@@ -24,7 +23,7 @@ with app.app_context():
     db.create_all()
 
 def generate_ai_feedback(transcript: str, stage: str) -> list:
-    prompt = f"""Analyze this {stage} pitch and provide actionable feedback:
+    prompt = f'''Analyze this {stage} pitch and provide actionable feedback:
     Transcript: {transcript}
     
     Please provide feedback in these categories:
@@ -34,16 +33,17 @@ def generate_ai_feedback(transcript: str, stage: str) -> list:
     4. Delivery and Communication
     5. Areas for Improvement
     
-    Format the response as a JSON object with numbered sections."""
+    Format each section with a number and title, followed by detailed feedback.'''
 
     try:
         response = openai_client.chat.completions.create(
             model="gpt-4",
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+            messages=[{"role": "user", "content": prompt}]
         )
-        feedback = json.loads(response.choices[0].message.content)
-        return [f"{key}: {value}" for key, value in feedback.items()]
+        feedback_text = response.choices[0].message.content
+        # Split feedback into sections
+        feedback_sections = feedback_text.split('\n\n')
+        return [section.strip() for section in feedback_sections if section.strip()]
     except Exception as e:
         print(f"Error generating feedback: {str(e)}")
         return ["Unable to generate AI feedback at this time. Please try again later."]

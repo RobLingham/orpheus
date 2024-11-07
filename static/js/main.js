@@ -28,6 +28,11 @@ function formatTime(seconds) {
 }
 
 function showScreen(screenName) {
+    // Reset all button highlights first
+    document.querySelectorAll('.btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+
     const screens = ['stage', 'time', 'pitchType', 'ready', 'recording'];
     screens.forEach(screen => {
         const element = document.getElementById(screen + 'Selection') || 
@@ -51,11 +56,14 @@ function showScreen(screenName) {
         if (endSessionBtn) endSessionBtn.style.display = 'none';
     }
 
-    // Update ready screen content for Q&A mode
-    if (screenName === 'ready' && window.pitchPracticeState.selectedPitchType === 'qa') {
+    // Update ready screen content for pitch type
+    if (screenName === 'ready') {
         const readyContent = document.querySelector('.ready-content p');
         if (readyContent) {
-            readyContent.textContent = "During this session you'll field questions and face objections. You'll be able to speak for 90 second increments (or until you hit the microphone button), receive questions/objections, respond to them, or continue on in your pitch.";
+            const defaultText = "Take a moment, collect your thoughts, and let me know when you're ready.";
+            const qaText = "During this session you'll field questions and face objections. You'll be able to speak for 90 second increments (or until you hit the microphone button), receive questions/objections, respond to them, or continue on in your pitch.";
+            
+            readyContent.textContent = window.pitchPracticeState.selectedPitchType === 'qa' ? qaText : defaultText;
         }
     }
 
@@ -208,7 +216,6 @@ function initializeSpeechRecognition() {
     }
 }
 
-// Core Functions
 function startRecording() {
     window.pitchPracticeState.isRecording = true;
     updateRecordingUI();
@@ -298,7 +305,6 @@ function resetSession() {
     showScreen('stage');
 }
 
-// API Functions
 async function saveTranscript() {
     const state = window.pitchPracticeState;
     const transcript = document.getElementById('transcript')?.textContent;
@@ -481,7 +487,6 @@ function continuePitch() {
     startRecording();
 }
 
-// Initialize when DOM is loaded
 document.addEventListener('DOMContentLoaded', function() {
     // Theme toggle
     const themeToggle = document.getElementById('themeToggle');
