@@ -26,8 +26,8 @@
 
         <main class="main-card">
             <div class="card-header">
-                <h2>Master Your Pitch, Enchant Every Audience.</h2>
-                <p class="subtitle">Practice your pitch, tackle tough objections, answer commonly asked questions, analyze your performance, and level up your pitch deck - all in a one place.</p>
+                <h2 id="mainHeader" class="{% if not request.path == '/' %}hidden{% endif %}">Master Your Pitch, Enchant Every Audience.</h2>
+                <p id="mainSubtitle" class="subtitle {% if not request.path == '/' %}hidden{% endif %}">Practice your pitch, tackle tough objections, answer commonly asked questions, analyze your performance, and level up your pitch deck - all in a one place.</p>
             </div>
 
             <div id="stageSelection" class="step-container">
