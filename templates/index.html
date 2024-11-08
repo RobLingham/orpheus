@@ -5,9 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orpheus - Pitch Practice</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css" rel="stylesheet">
 </head>
-<body data-theme="light">
+<body>
     <div class="container">
         <header>
             <div class="logo-container">
@@ -15,32 +15,32 @@
                 <h1>Orpheus</h1>
             </div>
             <div class="theme-toggle">
-                <i data-feather="sun"></i>
+                <i data-feather="sun" class="theme-icon"></i>
                 <label class="switch">
                     <input type="checkbox" id="themeToggle">
-                    <span class="slider round"></span>
+                    <span class="slider"></span>
                 </label>
-                <i data-feather="moon"></i>
+                <i data-feather="moon" class="theme-icon"></i>
             </div>
         </header>
 
         <main class="main-card">
             <div class="card-header">
-                <h2>Master Your Pitch, Enchant Every Audience</h2>
-                <p class="subtitle">Practice your pitch, tackle tough objections, answer commonly asked questions, analyze your performance, and level up your pitch deck - all in one place.</p>
+                <h2>Master Your Pitch, Enchant Every Audience.</h2>
+                <p class="subtitle">Practice your pitch, tackle tough objections, answer commonly asked questions, analyze your performance, and level up your pitch deck - all in a one place.</p>
             </div>
 
             <div id="stageSelection" class="step-container">
                 <h3>Who are we pitching to today?</h3>
                 <div class="grid-buttons">
-                    <button class="btn stage-btn rainbow-shimmer" data-value="elevator">Elevator Pitch</button>
-                    <button class="btn stage-btn rainbow-shimmer" data-value="angel">Angel Investment</button>
-                    <button class="btn stage-btn rainbow-shimmer" data-value="pre-seed">Pre-Seed</button>
-                    <button class="btn stage-btn rainbow-shimmer" data-value="seed">Seed</button>
-                    <button class="btn stage-btn rainbow-shimmer" data-value="series-a">Series A</button>
-                    <button class="btn stage-btn rainbow-shimmer" data-value="series-b">Series B</button>
-                    <button class="btn stage-btn rainbow-shimmer" data-value="series-c">Series C</button>
-                    <button class="btn stage-btn rainbow-shimmer" data-value="series-d">Series D</button>
+                    <button class="btn stage-btn" data-value="elevator">Elevator Pitch</button>
+                    <button class="btn stage-btn" data-value="angel">Angel Investment</button>
+                    <button class="btn stage-btn" data-value="pre-seed">Pre-Seed</button>
+                    <button class="btn stage-btn" data-value="seed">Seed</button>
+                    <button class="btn stage-btn" data-value="series-a">Series A</button>
+                    <button class="btn stage-btn" data-value="series-b">Series B</button>
+                    <button class="btn stage-btn" data-value="series-c">Series C</button>
+                    <button class="btn stage-btn" data-value="series-d">Series D</button>
                 </div>
             </div>
 
@@ -48,10 +48,10 @@
                 <button class="back-btn"><i data-feather="arrow-left"></i> Back</button>
                 <h3>How much time do you want to have?</h3>
                 <div class="grid-buttons">
-                    <button class="btn time-btn rainbow-shimmer" data-value="1">1 minute</button>
-                    <button class="btn time-btn rainbow-shimmer" data-value="5">5 minutes</button>
-                    <button class="btn time-btn rainbow-shimmer" data-value="15">15 minutes</button>
-                    <button class="btn time-btn rainbow-shimmer" data-value="30">30 minutes</button>
+                    <button class="btn time-btn" data-value="1">1 minute</button>
+                    <button class="btn time-btn" data-value="5">5 minutes</button>
+                    <button class="btn time-btn" data-value="15">15 minutes</button>
+                    <button class="btn time-btn" data-value="30">30 minutes</button>
                 </div>
             </div>
 
@@ -59,8 +59,18 @@
                 <button class="back-btn"><i data-feather="arrow-left"></i> Back</button>
                 <h3>How would you like to practice?</h3>
                 <div class="grid-buttons">
-                    <button class="btn pitch-type-btn rainbow-shimmer" data-value="straight">Straight Pitch</button>
-                    <button class="btn pitch-type-btn rainbow-shimmer" data-value="qa">Field Questions & Objections</button>
+                    <button class="btn pitch-type-btn" data-value="straight">Straight Pitch</button>
+                    <button class="btn pitch-type-btn" data-value="qa">Field Questions & Objections</button>
+                </div>
+            </div>
+
+            <div id="readyScreen" class="step-container hidden">
+                <button class="back-btn"><i data-feather="arrow-left"></i> Back</button>
+                <div class="ready-content">
+                    <p>Take a moment, collect your thoughts, and let me know when you're ready.</p>
+                    <div class="button-group">
+                        <button class="btn primary-btn" id="startBtn">Let's Go</button>
+                    </div>
                 </div>
             </div>
 
@@ -68,44 +78,38 @@
                 <button class="back-btn"><i data-feather="arrow-left"></i> Back</button>
                 <div class="recording-content">
                     <div class="timer-container">
-                        <div class="timer">
+                        <div class="timer total-timer">
                             <i data-feather="clock"></i>
+                            <span>Total Time: </span>
                             <span id="timeDisplay">0:00</span>
                         </div>
-                        <div class="timer qa-mode-only hidden">
+                        <div class="timer increment-timer qa-mode-only hidden">
                             <i data-feather="watch"></i>
+                            <span>Current Segment: </span>
                             <span id="incrementDisplay">0:00</span>
                         </div>
                     </div>
-
-                    <button id="recordBtn" class="record-btn">
+                    <button class="record-btn" id="recordBtn">
                         <i data-feather="mic"></i>
                     </button>
                     <p class="recording-status">Click to start recording</p>
-
                     <div class="transcript-container">
                         <div id="transcript" class="transcript"></div>
                     </div>
-
-                    <div id="qaContainer" class="qa-mode-only hidden">
+                    <div id="qaContainer" class="qa-container qa-mode-only hidden">
                         <div id="questionsList" class="questions-list"></div>
-                        <div class="button-group qa-controls">
-                            <button class="btn" id="skipQuestionBtn">Skip Question</button>
-                            <button class="btn primary-btn" id="generateQuestionBtn">Generate Question/Objection</button>
-                        </div>
                         <button class="btn primary-btn" id="continuePitchBtn">Continue Pitch</button>
                     </div>
-
-                    <div class="recording-controls">
-                        <button id="resetRecordingBtn" class="btn hidden">Reset Recording</button>
-                        <button id="feedbackBtn" class="btn primary-btn">Generate Feedback</button>
+                    <div class="button-group recording-controls">
+                        <button class="btn" id="resetRecordingBtn">Reset Recording</button>
+                        <button class="btn primary-btn" id="feedbackBtn">Generate Feedback</button>
                     </div>
-
                     <div id="feedbackContainer" class="feedback-container hidden">
-                        <div id="feedbackList"></div>
-                        <div class="button-group">
-                            <button id="resetBtn" class="btn">Reset</button>
-                            <button id="saveAndContinueBtn" class="btn primary-btn">Save & Continue</button>
+                        <h3>Feedback:</h3>
+                        <ul id="feedbackList"></ul>
+                        <div class="button-group feedback-actions">
+                            <button class="btn" id="resetBtn">Reset</button>
+                            <button class="btn primary-btn" id="saveAndContinueBtn">Save & Continue</button>
                         </div>
                     </div>
                 </div>
@@ -113,10 +117,31 @@
         </main>
     </div>
 
+    <div id="resetModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Reset Session</h3>
+            <p>Are you sure you want to reset? You'll lose all your work from this session.</p>
+            <div class="button-group">
+                <button class="btn" id="cancelResetBtn">Cancel</button>
+                <button class="btn primary-btn" id="confirmResetBtn">Reset</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="successModal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Congrats on your first pitch!</h3>
+            <p>Analysis and transcript will be saved in the side bar. Feel free to navigate there to dig in deeper. Or start fresh with a new run through</p>
+            <p class="quote"><em>"We are what we repeatedly do… therefore excellence is not an act, but a habit." In other words: Excellence isn't this thing you do one time. It's a way of living</em> - Durant</p>
+            <div class="button-group">
+                <button class="btn" id="reviewAnalysisBtn">Review Analysis</button>
+                <button class="btn" id="returnHomeBtn">Return Home</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
-    <script>
-        feather.replace();
-    </script>
 </body>
 </html>
