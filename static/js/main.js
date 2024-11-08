@@ -136,15 +136,17 @@ function startIncrementTimer() {
         incrementDisplay.textContent = formatTime(state.incrementTimeRemaining);
     }
 
+    if (state.incrementTimer) clearInterval(state.incrementTimer);
+
     state.incrementTimer = setInterval(() => {
         if (state.incrementTimeRemaining > 0) {
             state.incrementTimeRemaining--;
             if (incrementDisplay) {
                 incrementDisplay.textContent = formatTime(state.incrementTimeRemaining);
             }
-        } else {
+        }
+        if (state.incrementTimeRemaining === 0) {
             stopRecording();
-            generateQuestion();
         }
     }, 1000);
 }
@@ -413,8 +415,14 @@ async function generateQuestion() {
     const transcript = document.getElementById('transcript')?.textContent;
     const questionsList = document.getElementById('questionsList');
     const continuePitchBtn = document.getElementById('continuePitchBtn');
+    const generateQuestionBtn = document.getElementById('generateQuestionBtn');
+    const skipQuestionBtn = document.getElementById('skipQuestionBtn');
 
     if (!transcript || !questionsList || !continuePitchBtn) return;
+
+    // Disable buttons while generating
+    if (generateQuestionBtn) generateQuestionBtn.disabled = true;
+    if (skipQuestionBtn) skipQuestionBtn.disabled = true;
 
     try {
         const response = await fetch('/api/generate-question', {
@@ -424,13 +432,14 @@ async function generateQuestion() {
             },
             body: JSON.stringify({
                 transcript: transcript,
-                stage: state.selectedStage
+                stage: state.selectedStage,
+                previousQuestions: Array.from(questionsList.children).map(q => 
+                    q.querySelector('p')?.textContent || ''
+                )
             })
         });
 
-        if (!response.ok) {
-            throw new Error(`HTTP error! status: ${response.status}`);
-        }
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
         const data = await response.json();
         if (data.success && data.response) {
@@ -443,19 +452,25 @@ async function generateQuestion() {
             `;
             questionsList.appendChild(questionElement);
             questionsList.scrollTop = questionsList.scrollHeight;
+
+            // Show continue button and enable controls
             continuePitchBtn.style.display = 'block';
+            if (generateQuestionBtn) generateQuestionBtn.style.display = 'none';
+            if (skipQuestionBtn) skipQuestionBtn.style.display = 'none';
         }
     } catch (error) {
         console.error('Error generating question:', error);
-        const questionElement = document.createElement('div');
-        questionElement.className = 'question-item';
-        questionElement.innerHTML = `
-            <h4>Question</h4>
-            <p>Could you elaborate more on your pitch?</p>
-            <div class="response" id="response-${Date.now()}"></div>
-        `;
-        questionsList.appendChild(questionElement);
-        continuePitchBtn.style.display = 'block';
+        alert('Failed to generate question. Please try again.');
+    } finally {
+        // Re-enable buttons
+        if (generateQuestionBtn) {
+            generateQuestionBtn.disabled = false;
+            generateQuestionBtn.style.display = 'block';
+        }
+        if (skipQuestionBtn) {
+            skipQuestionBtn.disabled = false;
+            skipQuestionBtn.style.display = 'block';
+        }
     }
     updateIcons();
 }
@@ -549,6 +564,13 @@ document.addEventListener('DOMContentLoaded', function() {
     if (continuePitchBtn) {
         continuePitchBtn.addEventListener('click', continuePitch);
     }
+
+    document.getElementById('generateQuestionBtn')?.addEventListener('click', generateQuestion);
+    document.getElementById('skipQuestionBtn')?.addEventListener('click', () => {
+        document.getElementById('continuePitchBtn').style.display = 'block';
+        document.getElementById('generateQuestionBtn').style.display = 'none';
+        document.getElementById('skipQuestionBtn').style.display = 'none';
+    });
 
     document.getElementById('resetRecordingBtn').addEventListener('click', function() {
         const transcript = document.getElementById('transcript');
