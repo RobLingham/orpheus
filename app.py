@@ -236,25 +236,19 @@ def get_feedback():
     try:
         data = request.get_json()
         if not data:
-            print("No JSON data received in generate_feedback")
             return jsonify({'success': False, 'message': 'No data received'}), 400
             
         if 'transcript' not in data or 'stage' not in data:
-            print("Missing transcript or stage in generate_feedback")
             return jsonify({'success': False, 'message': 'Missing transcript or stage'}), 400
         
         transcript = data.get('transcript')
         stage = data.get('stage')
         
         if not transcript or not transcript.strip():
-            print("Empty transcript in generate_feedback")
             return jsonify({'success': False, 'message': 'Empty transcript'}), 400
         
         feedback = generate_ai_feedback(transcript, stage)
-        if not feedback:
-            return jsonify({'success': False, 'message': 'Failed to generate feedback'}), 500
-            
-        return jsonify({'success': True, 'feedback': feedback})
+        return jsonify(feedback)  # Return the feedback directly since it's already formatted correctly
     except Exception as e:
         print(f"Error in generate_feedback route: {str(e)}")
         return jsonify({'success': False, 'message': 'An error occurred while generating feedback'}), 500
