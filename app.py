@@ -11,7 +11,7 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///pitches.db'
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 
-# Initialize OpenAI client with response format as JSON
+# Initialize OpenAI client
 openai_client = OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
 # Angel Investor Questions and Objections
@@ -161,19 +161,13 @@ def generate_ai_feedback(transcript: str, stage: str) -> dict:
                 "content": prompt
             }],
             temperature=0.7,
-            max_tokens=1000,
-            response_format={"type": "json_object"}
+            max_tokens=1000
         )
         
         feedback_text = response.choices[0].message.content.strip()
         print(f"Raw feedback from OpenAI: {feedback_text}")  # Debug logging
         
-        # Parse the JSON response
-        try:
-            feedback_json = json.loads(feedback_text)
-        except json.JSONDecodeError as e:
-            print(f"JSON parsing error: {str(e)}, raw text: {feedback_text}")
-            raise
+        feedback_json = json.loads(feedback_text)
         
         # Validate the response structure
         required_keys = [
@@ -184,43 +178,21 @@ def generate_ai_feedback(transcript: str, stage: str) -> dict:
             "areas_for_improvement"
         ]
         
-        missing_keys = [key for key in required_keys if key not in feedback_json]
-        if missing_keys:
-            print(f"Missing required keys in feedback: {missing_keys}")
-            raise ValueError(f"Invalid feedback format - missing keys: {missing_keys}")
+        if not all(key in feedback_json for key in required_keys):
+            raise ValueError("Invalid feedback format - missing required keys")
             
         if not isinstance(feedback_json["areas_for_improvement"], list):
-            print("areas_for_improvement is not a list")
             raise ValueError("areas_for_improvement must be a list")
-        
-        # Validate each section has content
-        empty_sections = [key for key in required_keys if not feedback_json[key]]
-        if empty_sections:
-            print(f"Empty sections in feedback: {empty_sections}")
-            raise ValueError(f"Empty feedback sections: {empty_sections}")
             
         return {
             "success": True,
             "feedback": feedback_json
         }
-        
-    except json.JSONDecodeError as e:
-        print(f"Failed to parse OpenAI response: {str(e)}")
-        return {
-            "success": False,
-            "error": "Failed to parse feedback response. Please try again."
-        }
-    except ValueError as e:
-        print(f"Validation error in feedback: {str(e)}")
-        return {
-            "success": False,
-            "error": str(e)
-        }
     except Exception as e:
-        print(f"Unexpected error generating feedback: {str(e)}")
+        print(f"Error generating feedback: {str(e)}")
         return {
             "success": False,
-            "error": "An unexpected error occurred while generating feedback. Please try again."
+            "error": "An error occurred while generating feedback. Please try again."
         }
 
 @app.route('/')
