@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Orpheus - Pitch Practice</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
-    <link href="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
 </head>
 <body>
     <div class="container">
@@ -70,6 +70,7 @@
                     <p>Take a moment, collect your thoughts, and let me know when you're ready.</p>
                     <div class="button-group">
                         <button class="btn primary-btn" id="startBtn">Let's Go</button>
+                        <button class="btn" id="resetBtn">Reset</button>
                     </div>
                 </div>
             </div>
@@ -78,14 +79,11 @@
                 <button class="back-btn"><i data-feather="arrow-left"></i> Back</button>
                 <div class="recording-content">
                     <div class="timer-container">
-                        <div class="timer total-timer">
+                        <div class="timer">
                             <i data-feather="clock"></i>
-                            <span>Total Time: </span>
                             <span id="timeDisplay">0:00</span>
                         </div>
-                        <div class="timer increment-timer qa-mode-only hidden">
-                            <i data-feather="watch"></i>
-                            <span>Current Segment: </span>
+                        <div class="increment-timer qa-mode-only">
                             <span id="incrementDisplay">0:00</span>
                         </div>
                     </div>
@@ -96,20 +94,13 @@
                     <div class="transcript-container">
                         <div id="transcript" class="transcript"></div>
                     </div>
-                    <div id="qaContainer" class="qa-container qa-mode-only hidden">
-                        <div id="questionsList" class="questions-list"></div>
-                        <button class="btn primary-btn" id="continuePitchBtn" style="display: none;">Continue Pitch</button>
-                    </div>
-                    <div class="button-group recording-controls">
+                    <div class="button-group">
                         <button class="btn" id="resetRecordingBtn" style="display: none;">Reset Recording</button>
-                        <button class="btn primary-btn" id="generateQuestionBtn" style="display: none;">Generate Question</button>
                         <button class="btn primary-btn" id="feedbackBtn">Generate Feedback</button>
                     </div>
                     <div id="feedbackContainer" class="feedback-container hidden">
-                        <h3>Feedback:</h3>
-                        <ul id="feedbackList"></ul>
-                        <div class="button-group feedback-actions">
-                            <button class="btn" id="resetBtn">Reset</button>
+                        <div id="feedbackList"></div>
+                        <div class="button-group">
                             <button class="btn primary-btn" id="saveAndContinueBtn">Save & Continue</button>
                         </div>
                     </div>
@@ -131,17 +122,15 @@
 
     <div id="successModal" class="modal hidden">
         <div class="modal-content">
-            <h3>Congrats on your first pitch!</h3>
-            <p>Analysis and transcript will be saved in the side bar. Feel free to navigate there to dig in deeper. Or start fresh with a new run through</p>
-            <p class="quote"><em>"We are what we repeatedly do… therefore excellence is not an act, but a habit." In other words: Excellence isn't this thing you do one time. It's a way of living</em> - Durant</p>
+            <h3>Great job!</h3>
+            <p>Your pitch has been saved. Would you like to review your analysis or start a new session?</p>
             <div class="button-group">
                 <button class="btn" id="reviewAnalysisBtn">Review Analysis</button>
-                <button class="btn" id="returnHomeBtn">Return Home</button>
+                <button class="btn" id="returnHomeBtn">New Session</button>
             </div>
         </div>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/feather-icons/dist/feather.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 </body>
