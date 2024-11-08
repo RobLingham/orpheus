@@ -426,7 +426,7 @@ function continuePitch() {
 document.addEventListener('DOMContentLoaded', function() {
     // Initialize theme and icons
     initializeTheme();
-    feather.replace();
+    updateIcons();
     
     // Theme toggle
     const themeToggle = document.getElementById('themeToggle');
