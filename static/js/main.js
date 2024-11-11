@@ -365,24 +365,24 @@ async function generateFeedback() {
             feedbackList.innerHTML = `
                 <div class="feedback-section">
                     <h4>Opening and Hook</h4>
-                    <p>${data.feedback.opening_and_hook}</p>
+                    <p>${data.feedback.feedback.opening_and_hook}</p>
                 </div>
                 <div class="feedback-section">
                     <h4>Value Proposition</h4>
-                    <p>${data.feedback.value_proposition}</p>
+                    <p>${data.feedback.feedback.value_proposition}</p>
                 </div>
                 <div class="feedback-section">
                     <h4>Market Understanding</h4>
-                    <p>${data.feedback.market_understanding}</p>
+                    <p>${data.feedback.feedback.market_understanding}</p>
                 </div>
                 <div class="feedback-section">
                     <h4>Delivery and Communication</h4>
-                    <p>${data.feedback.delivery_and_communication}</p>
+                    <p>${data.feedback.feedback.delivery_and_communication}</p>
                 </div>
                 <div class="feedback-section">
                     <h4>Areas for Improvement</h4>
                     <ul>
-                        ${data.feedback.areas_for_improvement.map(item => `<li>${item}</li>`).join('')}
+                        ${data.feedback.feedback.areas_for_improvement.map(item => `<li>${item}</li>`).join('')}
                     </ul>
                 </div>
             `;
@@ -550,15 +550,12 @@ document.addEventListener('DOMContentLoaded', function() {
         continuePitchBtn.addEventListener('click', continuePitch);
     }
 
-    const resetRecordingBtn = document.getElementById('resetRecordingBtn');
-    if (resetRecordingBtn) {
-        resetRecordingBtn.addEventListener('click', function() {
-            const transcript = document.getElementById('transcript');
-            if (transcript) transcript.textContent = '';
-            this.style.display = 'none';
-            updateIcons();
-        });
-    }
+    document.getElementById('resetRecordingBtn').addEventListener('click', function() {
+        const transcript = document.getElementById('transcript');
+        if (transcript) transcript.textContent = '';
+        this.style.display = 'none';
+        updateIcons();
+    });
 
     document.getElementById('saveAndContinueBtn').addEventListener('click', async () => {
         const btn = document.getElementById('saveAndContinueBtn');
