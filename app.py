@@ -140,7 +140,8 @@ def generate_question_or_objection(transcript: str, stage: str) -> dict:
         return {"type": "objection", "content": random.choice(ANGEL_INVESTOR_OBJECTIONS)}
 
 def generate_ai_feedback(transcript: str, stage: str) -> dict:
-    prompt = f'''Analyze this {stage} pitch and provide actionable feedback. Return your analysis in this exact JSON format:
+    prompt = f'''Analyze this {stage} pitch and provide actionable feedback. 
+    Return your analysis in this exact JSON format:
     {{
         "opening_and_hook": "detailed feedback about the opening",
         "value_proposition": "detailed feedback about the value proposition",
@@ -152,10 +153,6 @@ def generate_ai_feedback(transcript: str, stage: str) -> dict:
     Transcript: {transcript}'''
 
     try:
-        # Print debug info
-        print(f"Generating feedback for stage: {stage}")
-        print(f"Transcript length: {len(transcript)}")
-        
         response = openai_client.chat.completions.create(
             model="gpt-4",
             messages=[{
@@ -166,17 +163,7 @@ def generate_ai_feedback(transcript: str, stage: str) -> dict:
             max_tokens=1000
         )
         
-        feedback_text = response.choices[0].message.content.strip()
-        print(f"Raw feedback: {feedback_text}")  # Debug logging
-        
-        try:
-            feedback_json = json.loads(feedback_text)
-        except json.JSONDecodeError as e:
-            print(f"JSON parsing error: {str(e)}")
-            return {
-                "success": False,
-                "error": "Failed to parse feedback response"
-            }
+        feedback_json = json.loads(response.choices[0].message.content.strip())
         
         # Validate the response structure
         required_keys = [
@@ -188,28 +175,26 @@ def generate_ai_feedback(transcript: str, stage: str) -> dict:
         ]
         
         if not all(key in feedback_json for key in required_keys):
-            print("Missing required keys in feedback")
-            return {
-                "success": False,
-                "error": "Invalid feedback format"
-            }
+            raise ValueError("Invalid feedback format")
             
         if not isinstance(feedback_json["areas_for_improvement"], list):
-            print("areas_for_improvement is not a list")
-            return {
-                "success": False,
-                "error": "Invalid feedback format"
-            }
+            raise ValueError("areas_for_improvement must be a list")
             
         return {
             "success": True,
             "feedback": feedback_json
         }
+    except json.JSONDecodeError as e:
+        print(f"JSON parsing error: {str(e)}")
+        return {
+            "success": False,
+            "error": "Failed to parse feedback response"
+        }
     except Exception as e:
         print(f"Error generating feedback: {str(e)}")
         return {
             "success": False,
-            "error": "An error occurred while generating feedback. Please try again."
+            "error": "Unable to generate AI feedback at this time."
         }
 
 @app.route('/')
@@ -251,30 +236,28 @@ def get_feedback():
     try:
         data = request.get_json()
         if not data:
-            return jsonify({'success': False, 'error': 'No data received'}), 400
+            print("No JSON data received in generate_feedback")
+            return jsonify({'success': False, 'message': 'No data received'}), 400
             
-        transcript = data.get('transcript', '').strip()
-        stage = data.get('stage', '').strip()
+        if 'transcript' not in data or 'stage' not in data:
+            print("Missing transcript or stage in generate_feedback")
+            return jsonify({'success': False, 'message': 'Missing transcript or stage'}), 400
         
-        if not transcript:
-            return jsonify({'success': False, 'error': 'Empty transcript'}), 400
+        transcript = data.get('transcript')
+        stage = data.get('stage')
         
-        if not stage:
-            return jsonify({'success': False, 'error': 'Empty stage'}), 400
-        
-        # Print debug info
-        print(f"Generating feedback for stage: {stage}")
-        print(f"Transcript length: {len(transcript)}")
+        if not transcript or not transcript.strip():
+            print("Empty transcript in generate_feedback")
+            return jsonify({'success': False, 'message': 'Empty transcript'}), 400
         
         feedback = generate_ai_feedback(transcript, stage)
-        return jsonify(feedback)
-        
+        if not feedback:
+            return jsonify({'success': False, 'message': 'Failed to generate feedback'}), 500
+            
+        return jsonify({'success': True, 'feedback': feedback})
     except Exception as e:
-        print(f"Error in get_feedback route: {str(e)}")
-        return jsonify({
-            'success': False, 
-            'error': 'An error occurred while generating feedback. Please try again.'
-        }), 500
+        print(f"Error in generate_feedback route: {str(e)}")
+        return jsonify({'success': False, 'message': 'An error occurred while generating feedback'}), 500
 
 @app.route('/api/generate-question', methods=['POST'])
 def generate_question():

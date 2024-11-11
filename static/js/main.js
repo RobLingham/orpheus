@@ -1,195 +1,31 @@
 // Initialize global state and Speech Recognition
 let recognition = null;
 
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize Feather icons
-    feather.replace();
-    
-    // Initialize state object
-    window.pitchPracticeState = {
-        currentStep: 'stage',
-        selectedStage: '',
-        selectedTime: '',
-        selectedPitchType: '',
-        isRecording: false,
-        timeRemaining: 0,
-        incrementTimeRemaining: 30,
-        recognition: null,
-        timer: null,
-        incrementTimer: null
-    };
+// Initialize state object
+window.pitchPracticeState = {
+    currentStep: 'stage',
+    selectedStage: '',
+    selectedTime: '',
+    selectedPitchType: '',
+    isRecording: false,
+    timeRemaining: 0,
+    incrementTimeRemaining: 0,
+    recognition: null,
+    timer: null,
+    incrementTimer: null
+};
 
-    // Theme toggle functionality
-    const themeToggle = document.getElementById('themeToggle');
-    if (themeToggle) {
-        // Check for saved theme preference
-        const currentTheme = localStorage.getItem('theme') || 'light';
-        document.body.dataset.theme = currentTheme;
-        themeToggle.checked = currentTheme === 'dark';
-        
-        themeToggle.addEventListener('change', function() {
-            const newTheme = this.checked ? 'dark' : 'light';
-            document.body.dataset.theme = newTheme;
-            localStorage.setItem('theme', newTheme);
-        });
+// Re-initialize icons when needed
+function updateIcons() {
+    if (typeof feather !== 'undefined') {
+        feather.replace();
     }
-
-    // Stage selection buttons
-    document.querySelectorAll('.stage-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            window.pitchPracticeState.selectedStage = this.dataset.value;
-            window.pitchPracticeState.currentStep = 'time';
-            updateUI();
-        });
-    });
-
-    // Time selection buttons
-    document.querySelectorAll('.time-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            window.pitchPracticeState.selectedTime = this.dataset.value;
-            window.pitchPracticeState.currentStep = 'pitchType';
-            window.pitchPracticeState.timeRemaining = parseInt(this.dataset.value) * 60;
-            updateUI();
-        });
-    });
-
-    // Pitch type selection buttons
-    document.querySelectorAll('.pitch-type-btn').forEach(button => {
-        button.addEventListener('click', function() {
-            window.pitchPracticeState.selectedPitchType = this.dataset.value;
-            window.pitchPracticeState.currentStep = 'ready';
-            updateUI();
-        });
-    });
-
-    // Back buttons
-    document.querySelectorAll('.back-btn').forEach(button => {
-        button.addEventListener('click', goBack);
-    });
-
-    // Start button
-    document.getElementById('startBtn').addEventListener('click', handleStart);
-
-    // Record button
-    document.getElementById('recordBtn').addEventListener('click', function() {
-        if (window.pitchPracticeState.isRecording) {
-            stopRecording();
-        } else {
-            startRecording();
-        }
-    });
-
-    // Generate Feedback button
-    document.getElementById('feedbackBtn').addEventListener('click', generateFeedback);
-
-    // Save & Continue button
-    document.getElementById('saveAndContinueBtn').addEventListener('click', async function() {
-        try {
-            const transcript = document.getElementById('transcript')?.textContent;
-            if (!transcript) return;
-
-            // Save transcript
-            const response = await fetch('/api/save-transcript', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({
-                    transcript: transcript,
-                    stage: window.pitchPracticeState.selectedStage,
-                    duration: parseInt(window.pitchPracticeState.selectedTime) * 60 - window.pitchPracticeState.timeRemaining
-                })
-            });
-
-            if (!response.ok) {
-                throw new Error('Failed to save transcript');
-            }
-
-            // Reset recording state but maintain session
-            document.getElementById('transcript').textContent = '';
-            document.getElementById('feedbackContainer').classList.add('hidden');
-            
-            if (window.pitchPracticeState.selectedPitchType === 'qa') {
-                // Reset for next Q&A segment
-                window.pitchPracticeState.incrementTimeRemaining = 30;
-                document.getElementById('incrementDisplay').textContent = '0:30';
-                document.getElementById('generateQuestionBtn').style.display = 'block';
-            }
-
-            // Show success message
-            const successModal = document.getElementById('successModal');
-            if (successModal) {
-                successModal.classList.remove('hidden');
-                if (typeof confetti !== 'undefined') {
-                    confetti({
-                        particleCount: 100,
-                        spread: 70,
-                        origin: { y: 0.6 }
-                    });
-                }
-            }
-        } catch (error) {
-            console.error('Error saving transcript:', error);
-            alert('Failed to save transcript. Please try again.');
-        }
-    });
-
-    // Success modal buttons
-    document.getElementById('reviewAnalysisBtn').addEventListener('click', function() {
-        document.getElementById('successModal').classList.add('hidden');
-        // Add code here to show analysis view when implemented
-    });
-
-    document.getElementById('returnHomeBtn').addEventListener('click', function() {
-        document.getElementById('successModal').classList.add('hidden');
-        resetSession();
-    });
-
-    // Reset button
-    document.getElementById('resetBtn').addEventListener('click', function() {
-        document.getElementById('resetModal').classList.remove('hidden');
-    });
-
-    // Reset modal buttons
-    document.getElementById('cancelResetBtn').addEventListener('click', function() {
-        document.getElementById('resetModal').classList.add('hidden');
-    });
-
-    document.getElementById('confirmResetBtn').addEventListener('click', function() {
-        document.getElementById('resetModal').classList.add('hidden');
-        resetSession();
-    });
-});
-
-function updateUI() {
-    // Hide all step containers
-    document.querySelectorAll('.step-container').forEach(container => {
-        container.classList.add('hidden');
-    });
-
-    // Show current step
-    const currentContainer = document.getElementById(window.pitchPracticeState.currentStep + 'Selection') ||
-                           document.getElementById(window.pitchPracticeState.currentStep + 'Screen');
-    if (currentContainer) {
-        currentContainer.classList.remove('hidden');
-    }
-
-    // Re-initialize Feather icons after UI update
-    feather.replace();
 }
 
 function formatTime(seconds) {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = seconds % 60;
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
-}
-
-function handleStart() {
-    window.pitchPracticeState.timeRemaining = parseInt(window.pitchPracticeState.selectedTime) * 60;
-    if (window.pitchPracticeState.selectedPitchType === 'qa') {
-        window.pitchPracticeState.incrementTimeRemaining = 30;
-    }
-    showScreen('recording');
 }
 
 function showScreen(screenName) {
@@ -205,7 +41,34 @@ function showScreen(screenName) {
             element.classList.toggle('hidden', screen !== screenName);
         }
     });
+    
+    const cardHeader = document.querySelector('.card-header');
+    if (cardHeader) {
+        cardHeader.style.display = screenName === 'stage' ? 'block' : 'none';
+    }
 
+    if (screenName === 'recording') {
+        const feedbackBtn = document.getElementById('feedbackBtn');
+        const endSessionBtn = document.getElementById('endSessionBtn');
+        if (feedbackBtn) feedbackBtn.style.display = 'block';
+        if (endSessionBtn) endSessionBtn.style.display = 'none';
+    }
+
+    if (screenName === 'ready') {
+        const readyContent = document.querySelector('.ready-content p');
+        if (readyContent) {
+            const defaultText = "Take a moment, collect your thoughts, and let me know when you're ready.";
+            const qaText = "During this session you'll field questions and face objections. You'll be able to speak for 30 second increments (or until you hit the microphone button), receive questions/objections, respond to them, or continue on in your pitch.";
+            
+            readyContent.textContent = window.pitchPracticeState.selectedPitchType === 'qa' ? qaText : defaultText;
+        }
+    }
+
+    const qaElements = document.querySelectorAll('.qa-mode-only');
+    qaElements.forEach(element => {
+        element.classList.toggle('show', window.pitchPracticeState.selectedPitchType === 'qa');
+    });
+    
     window.pitchPracticeState.currentStep = screenName;
     updateIcons();
 }
@@ -231,56 +94,14 @@ function updateRecordingUI() {
     updateIcons();
 }
 
-function startRecording() {
-    window.pitchPracticeState.isRecording = true;
-    updateRecordingUI();
-    startTimer();
-    initializeSpeechRecognition();
-}
-
-function stopRecording() {
-    window.pitchPracticeState.isRecording = false;
-    updateRecordingUI();
-    stopTimer();
-    
-    if (recognition) {
-        try {
-            recognition.stop();
-        } catch (error) {
-            console.error('Error stopping recognition:', error);
-        }
+function updateTimerDisplay() {
+    const state = window.pitchPracticeState;
+    const timeDisplay = document.getElementById('timeDisplay');
+    if (timeDisplay) {
+        timeDisplay.textContent = formatTime(state.timeRemaining);
     }
-}
-
-function initializeSpeechRecognition() {
-    if (!recognition) {
-        if ('webkitSpeechRecognition' in window) {
-            recognition = new webkitSpeechRecognition();
-            recognition.continuous = true;
-            recognition.interimResults = true;
-        } else {
-            alert('Speech recognition is not supported in your browser');
-            return;
-        }
-    }
-
-    recognition.onresult = (event) => {
-        const transcript = Array.from(event.results)
-            .map(result => result[0])
-            .map(result => result.transcript)
-            .join(' ');
-        
-        const transcriptElement = document.getElementById('transcript');
-        if (transcriptElement) {
-            transcriptElement.textContent = transcript;
-        }
-    };
-
-    try {
-        recognition.start();
-    } catch (error) {
-        console.error('Error starting recognition:', error);
-        stopRecording();
+    if (state.currentStep === 'recording' && !state.isRecording) {
+        timeDisplay.textContent = formatTime(state.selectedTime * 60);
     }
 }
 
@@ -340,27 +161,81 @@ function stopTimer() {
     }
 }
 
-function updateTimerDisplay() {
-    const state = window.pitchPracticeState;
-    const timeDisplay = document.getElementById('timeDisplay');
-    if (timeDisplay) {
-        timeDisplay.textContent = formatTime(state.timeRemaining);
+function initializeSpeechRecognition() {
+    if (!recognition) {
+        if ('webkitSpeechRecognition' in window) {
+            recognition = new webkitSpeechRecognition();
+            recognition.continuous = true;
+            recognition.interimResults = true;
+        } else {
+            alert('Speech recognition is not supported in your browser');
+            return;
+        }
+    }
+
+    recognition.onresult = (event) => {
+        const transcript = Array.from(event.results)
+            .map(result => result[0])
+            .map(result => result.transcript)
+            .join(' ');
+        
+        const transcriptElement = document.getElementById('transcript');
+        if (transcriptElement) {
+            transcriptElement.textContent = transcript;
+        }
+    };
+
+    try {
+        recognition.start();
+    } catch (error) {
+        console.error('Error starting recognition:', error);
+        stopRecording();
     }
 }
 
+function startRecording() {
+    window.pitchPracticeState.isRecording = true;
+    updateRecordingUI();
+    startTimer();
+    initializeSpeechRecognition();
+}
+
+function stopRecording() {
+    window.pitchPracticeState.isRecording = false;
+    updateRecordingUI();
+    stopTimer();
+    
+    if (recognition) {
+        try {
+            recognition.stop();
+        } catch (error) {
+            console.error('Error stopping recognition:', error);
+        }
+    }
+}
+
+function handleStart() {
+    showScreen('recording');
+    window.pitchPracticeState.timeRemaining = parseInt(window.pitchPracticeState.selectedTime) * 60;
+    updateTimerDisplay();
+}
+
+function handleReset() {
+    stopRecording();
+    resetSession();
+}
+
 function goBack() {
-    switch (window.pitchPracticeState.currentStep) {
+    const currentStep = window.pitchPracticeState.currentStep;
+    switch (currentStep) {
         case 'time':
             showScreen('stage');
-            window.pitchPracticeState.selectedStage = '';
             break;
         case 'pitchType':
             showScreen('time');
-            window.pitchPracticeState.selectedTime = '';
             break;
         case 'ready':
             showScreen('pitchType');
-            window.pitchPracticeState.selectedPitchType = '';
             break;
         case 'recording':
             if (window.pitchPracticeState.isRecording) {
@@ -387,7 +262,7 @@ function resetSession() {
         selectedPitchType: '',
         isRecording: false,
         timeRemaining: 0,
-        incrementTimeRemaining: 30,
+        incrementTimeRemaining: 0,
         timer: null,
         incrementTimer: null
     };
@@ -396,15 +271,57 @@ function resetSession() {
     const feedbackContainer = document.getElementById('feedbackContainer');
     const timeDisplay = document.getElementById('timeDisplay');
     const incrementDisplay = document.getElementById('incrementDisplay');
+    const questionsList = document.getElementById('questionsList');
     const resetRecordingBtn = document.getElementById('resetRecordingBtn');
 
     if (transcript) transcript.textContent = '';
     if (feedbackContainer) feedbackContainer.classList.add('hidden');
     if (timeDisplay) timeDisplay.textContent = '0:00';
     if (incrementDisplay) incrementDisplay.textContent = '0:00';
+    if (questionsList) questionsList.innerHTML = '';
     if (resetRecordingBtn) resetRecordingBtn.style.display = 'none';
     
+    document.querySelectorAll('.btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
     showScreen('stage');
+    updateIcons();
+}
+
+async function saveTranscript() {
+    const state = window.pitchPracticeState;
+    const transcriptElement = document.getElementById('transcript');
+    const transcript = transcriptElement?.textContent || '';
+    
+    if (!transcript.trim()) {
+        console.log('No transcript to save');
+        return true;
+    }
+
+    try {
+        const response = await fetch('/api/save-transcript', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                stage: state.selectedStage,
+                duration: parseInt(state.selectedTime) * 60,
+                transcript: transcript
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        return data.success;
+    } catch (error) {
+        console.error('Error saving transcript:', error);
+        return true;
+    }
 }
 
 async function generateFeedback() {
@@ -448,24 +365,24 @@ async function generateFeedback() {
             feedbackList.innerHTML = `
                 <div class="feedback-section">
                     <h4>Opening and Hook</h4>
-                    <p>${data.feedback.opening_and_hook}</p>
+                    <p>${data.feedback.feedback.opening_and_hook}</p>
                 </div>
                 <div class="feedback-section">
                     <h4>Value Proposition</h4>
-                    <p>${data.feedback.value_proposition}</p>
+                    <p>${data.feedback.feedback.value_proposition}</p>
                 </div>
                 <div class="feedback-section">
                     <h4>Market Understanding</h4>
-                    <p>${data.feedback.market_understanding}</p>
+                    <p>${data.feedback.feedback.market_understanding}</p>
                 </div>
                 <div class="feedback-section">
                     <h4>Delivery and Communication</h4>
-                    <p>${data.feedback.delivery_and_communication}</p>
+                    <p>${data.feedback.feedback.delivery_and_communication}</p>
                 </div>
                 <div class="feedback-section">
                     <h4>Areas for Improvement</h4>
                     <ul>
-                        ${data.feedback.areas_for_improvement.map(item => `<li>${item}</li>`).join('')}
+                        ${data.feedback.feedback.areas_for_improvement.map(item => `<li>${item}</li>`).join('')}
                     </ul>
                 </div>
             `;
@@ -491,8 +408,172 @@ async function generateFeedback() {
     }
 }
 
-function updateIcons() {
-    if (typeof feather !== 'undefined') {
-        feather.replace();
+async function generateQuestion() {
+    const state = window.pitchPracticeState;
+    const transcript = document.getElementById('transcript')?.textContent;
+    const questionsList = document.getElementById('questionsList');
+    const continuePitchBtn = document.getElementById('continuePitchBtn');
+
+    if (!transcript || !questionsList || !continuePitchBtn) return;
+
+    try {
+        const response = await fetch('/api/generate-question', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+                transcript: transcript,
+                stage: state.selectedStage
+            })
+        });
+
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+
+        const data = await response.json();
+        if (data.success && data.response) {
+            const questionElement = document.createElement('div');
+            questionElement.className = 'question-item';
+            questionElement.innerHTML = `
+                <h4>${data.response.type === 'question' ? 'Question' : 'Objection'}</h4>
+                <p>${data.response.content}</p>
+                <div class="response" id="response-${Date.now()}"></div>
+            `;
+            questionsList.appendChild(questionElement);
+            questionsList.scrollTop = questionsList.scrollHeight;
+            continuePitchBtn.style.display = 'block';
+        }
+    } catch (error) {
+        console.error('Error generating question:', error);
+        const questionElement = document.createElement('div');
+        questionElement.className = 'question-item';
+        questionElement.innerHTML = `
+            <h4>Question</h4>
+            <p>Could you elaborate more on your pitch?</p>
+            <div class="response" id="response-${Date.now()}"></div>
+        `;
+        questionsList.appendChild(questionElement);
+        continuePitchBtn.style.display = 'block';
     }
+    updateIcons();
 }
+
+function continuePitch() {
+    const state = window.pitchPracticeState;
+    state.incrementTimeRemaining = 30;
+    startRecording();
+}
+
+// Theme toggle functionality
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Feather icons
+    feather.replace();
+    
+    const themeToggle = document.getElementById('themeToggle');
+    if (themeToggle) {
+        // Check for saved theme preference or default to 'light'
+        const currentTheme = localStorage.getItem('theme') || 'light';
+        document.body.dataset.theme = currentTheme;
+        themeToggle.checked = currentTheme === 'dark';
+        
+        // Add event listener for theme toggle
+        themeToggle.addEventListener('change', function() {
+            const newTheme = this.checked ? 'dark' : 'light';
+            document.body.dataset.theme = newTheme;
+            localStorage.setItem('theme', newTheme);
+        });
+    }
+
+    document.getElementById('recordBtn').addEventListener('click', function() {
+        if (window.pitchPracticeState.isRecording) {
+            stopRecording();
+        } else {
+            startRecording();
+        }
+    });
+
+    document.querySelectorAll('.stage-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            window.pitchPracticeState.selectedStage = button.dataset.value;
+            button.classList.add('active');
+            showScreen('time');
+        });
+    });
+
+    document.querySelectorAll('.time-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            window.pitchPracticeState.selectedTime = button.dataset.value;
+            button.classList.add('active');
+            showScreen('pitchType');
+        });
+    });
+
+    document.querySelectorAll('.pitch-type-btn').forEach(button => {
+        button.addEventListener('click', () => {
+            window.pitchPracticeState.selectedPitchType = button.dataset.value;
+            button.classList.add('active');
+            showScreen('ready');
+        });
+    });
+
+    const startBtn = document.getElementById('startBtn');
+    if (startBtn) {
+        startBtn.addEventListener('click', handleStart);
+    }
+
+    document.getElementById('resetBtn').addEventListener('click', () => {
+        document.getElementById('resetModal').classList.remove('hidden');
+    });
+
+    document.getElementById('cancelResetBtn').addEventListener('click', () => {
+        document.getElementById('resetModal').classList.add('hidden');
+    });
+
+    document.getElementById('confirmResetBtn').addEventListener('click', () => {
+        document.getElementById('resetModal').classList.add('hidden');
+        resetSession();
+    });
+
+    document.querySelectorAll('.back-btn').forEach(button => {
+        button.addEventListener('click', goBack);
+    });
+
+    const feedbackBtn = document.getElementById('feedbackBtn');
+    if (feedbackBtn) {
+        feedbackBtn.addEventListener('click', generateFeedback);
+    }
+
+    const continuePitchBtn = document.getElementById('continuePitchBtn');
+    if (continuePitchBtn) {
+        continuePitchBtn.addEventListener('click', continuePitch);
+    }
+
+    document.getElementById('resetRecordingBtn').addEventListener('click', function() {
+        const transcript = document.getElementById('transcript');
+        if (transcript) transcript.textContent = '';
+        this.style.display = 'none';
+        updateIcons();
+    });
+
+    document.getElementById('saveAndContinueBtn').addEventListener('click', async () => {
+        const btn = document.getElementById('saveAndContinueBtn');
+        btn.disabled = true;
+        btn.innerHTML = '<i data-feather="loader" class="animate-spin"></i> Saving...';
+        updateIcons();
+        
+        await saveTranscript();
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        confetti({
+            particleCount: 100,
+            spread: 70,
+            origin: { y: 0.6 }
+        });
+        
+        setTimeout(() => {
+            resetSession();
+        }, 1000);
+    });
+});
